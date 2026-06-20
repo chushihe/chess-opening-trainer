@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>当头炮布局谱训练</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Microsoft YaHei', 'SimHei', 'PingFang SC', sans-serif;
+  background: #2c1810;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 10px;
+}
+#app {
+  background: #d4a574;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6), inset 0 0 0 2px #c49565;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+}
+#left-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+#header {
+  text-align: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+#header h1 { font-size: clamp(18px, 5vw, 24px); color: #5c2e00; text-shadow: 1px 1px 0 rgba(255,200,100,0.3); }
+#opening-name {
+  font-size: clamp(14px, 3.5vw, 18px); color: #7a3b00; margin-top: 4px; min-height: 24px;
+  font-weight: bold; letter-spacing: 2px;
+}
+#board-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 508px;
+  aspect-ratio: 508 / 550;
+}
+#board-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 4px;
+}
+#pieces-container {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.piece {
+  position: absolute;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold;
+  cursor: pointer; pointer-events: all;
+  transform: translate(-50%, -50%);
+  transition: left 0.15s, top 0.15s, box-shadow 0.1s;
+  border: 2px solid;
+  box-shadow: 2px 3px 6px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,255,255,0.3);
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
+}
+.piece:active { filter: brightness(1.1); }
+.piece.selected {
+  box-shadow: 0 0 0 3px #ffe44d, 0 0 12px #ffd700, 2px 3px 6px rgba(0,0,0,0.35);
+  z-index: 20;
+}
+.piece.red {
+  background: radial-gradient(circle at 35% 35%, #fff0e0, #f5d6c6 40%, #e8c8b0 80%, #dbb8a0);
+  color: #b22222;
+  border-color: #b22222;
+  text-shadow: 0 1px 1px rgba(255,200,150,0.5);
+}
+.piece.black {
+  background: radial-gradient(circle at 35% 35%, #f0ece8, #d8d0c8 40%, #c0b8b0 80%, #a8a098);
+  color: #1a1a2e;
+  border-color: #1a1a2e;
+  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+}
+.hint-dot {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer; pointer-events: all;
+  z-index: 5;
+  transition: transform 0.1s;
+  animation: pulse 1.5s infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+.hint-dot:active { transform: translate(-50%, -50%) scale(1.3); }
+@keyframes pulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+#sidebar {
+  flex: 1 1 220px;
+  min-width: 200px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+#controls { display: flex; flex-wrap: wrap; gap: 6px; }
+#controls button {
+  padding: 10px 12px; border: none; border-radius: 8px;
+  font-size: clamp(12px, 3vw, 14px); font-family: inherit; cursor: pointer;
+  background: #c49565; color: #3a1e00;
+  border: 1px solid #b08050;
+  transition: background 0.15s, transform 0.1s;
+  flex: 1; min-width: 60px;
+  -webkit-tap-highlight-color: transparent;
+}
+#controls button:hover { background: #b88858; }
+#controls button:active { transform: translateY(0); background: #b08050; }
+#controls button.primary { background: #b22222; color: #fff; border-color: #8a1a1a; }
+#controls button.primary:active { background: #991e1e; }
+#controls button:disabled { opacity: 0.4; cursor: default; transform: none; }
+
+#move-history {
+  background: rgba(0,0,0,0.08); border-radius: 8px; padding: 10px;
+  min-height: 80px; max-height: 180px; overflow-y: auto;
+}
+#move-history h3 { font-size: clamp(12px, 3vw, 14px); color: #5c2e00; margin-bottom: 6px; }
+#move-list {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 2px 0;
+  font-size: clamp(11px, 2.8vw, 13px);
+}
+#move-list li {
+  padding: 2px 6px; border-radius: 3px; color: #3a1e00;
+  width: 50%;
+}
+#move-list li .num { color: #7a5a3a; margin-right: 4px; }
+#move-list li.active { background: rgba(0,200,80,0.2); font-weight: bold; }
+
+#variations {
+  background: rgba(0,0,0,0.08); border-radius: 8px; padding: 10px;
+  min-height: 40px;
+}
+#variations h3 { font-size: clamp(12px, 3vw, 14px); color: #5c2e00; margin-bottom: 6px; }
+.var-btn {
+  display: inline-block; padding: 5px 10px; margin: 2px;
+  border: 1px solid #b08050; border-radius: 6px;
+  background: rgba(255,255,255,0.3); cursor: pointer;
+  font-size: clamp(11px, 2.8vw, 12px); color: #3a1e00;
+}
+.var-btn:active { background: rgba(255,255,255,0.6); }
+
+#help-text { font-size: clamp(10px, 2.5vw, 12px); color: #7a5a3a; line-height: 1.6; }
+
+#status-bar {
+  margin-top: 6px;
+  font-size: clamp(12px, 3vw, 14px); color: #5c2e00;
+  min-height: 22px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  body { padding: 6px; }
+  #app { padding: 12px; gap: 12px; border-radius: 10px; }
+  #sidebar { flex: 1 1 100%; }
+  #board-wrapper { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="left-col">
+  <div id="header">
+    <h1>当头炮布局谱训练</h1>
+    <div id="opening-name">—</div>
+  </div>
+  <div id="board-wrapper">
+    <canvas id="board-canvas"></canvas>
+    <div id="pieces-container"></div>
+  </div>
+  <div id="status-bar">点击棋子选中，再点击绿色提示走棋</div>
+</div>
+<div id="sidebar">
+  <div id="controls">
+    <button id="undo-btn" disabled>退一手</button>
+    <button id="redo-btn" disabled>进一手</button>
+    <button id="hint-btn" class="primary">提示</button>
+    <button id="reset-btn">新局</button>
+  </div>
+  <div id="move-history">
+    <h3>着法记录</h3>
+    <ul id="move-list"></ul>
+  </div>
+  <div id="variations">
+    <h3>布局变着</h3>
+    <div id="variation-list"><span style="color:#7a5a3a;font-size:13px;">走棋后显示可选变着</span></div>
+  </div>
+  <div id="help-text">
+    <b>操作说明:</b><br>
+    • 点击己方棋子选中，再点绿色圆点走棋<br>
+    • 绿色 → 布局谱着法；红色 → 吃子<br>
+    • 键盘: Ctrl+Z 退 · Ctrl+Shift+Z 进 · H 提示 · R 新局
+  </div>
+</div>
+</div>
+
+<script>
+// ============ Dynamic Layout ============
+let L = {}; // current layout { cw, ch, px, py, rg, ps, fs, s }
+
+function calcLayout() {
+  const wrapper = document.getElementById('board-wrapper');
+  const avail = wrapper.clientWidth || 508;
+  // Base: cell 54, pad 38, river gap 30, piece 46, font 22
+  const baseBoardW = 38 * 2 + 8 * 54; // 508
+  const s = Math.min(1, avail / baseBoardW);
+  L = {
+    cw: 54 * s,   // cell width
+    ch: 54 * s,   // cell height
+    px: 38 * s,   // pad x
+    py: 38 * s,   // pad y
+    rg: 30 * s,   // river gap
+    ps: 46 * s,   // piece size
+    fs: 22 * s,   // font size
+    s: s,
+  };
+}
+
+function rowY(r) {
+  return L.py + r * L.ch + (r >= 5 ? L.rg - L.ch : 0);
+}
+
+const ROWS = 10, COLS = 9;
+
+// ============ Constants ============
+const PIECE_NAMES = {
+  K: { red: '帅', black: '将' },
+  A: { red: '仕', black: '士' },
+  E: { red: '相', black: '象' },
+  R: { red: '车', black: '车' },
+  H: { red: '马', black: '马' },
+  C: { red: '炮', black: '炮' },
+  P: { red: '兵', black: '卒' },
+};
+const PIECE_FROM_CHAR = {};
+for (let [k, v] of Object.entries(PIECE_NAMES)) {
+  PIECE_FROM_CHAR[v.red] = k; PIECE_FROM_CHAR[v.black] = k;
+}
+
+// ============ Board State ============
+let board = [];
+let moveStack = [];
+let redoStack = [];
+let selectedR = -1, selectedC = -1;
+let currentPlayer = 'red';
+let hintsVisible = false;
+
+// ============ Opening Book Tree ============
+class BookNode {
+  constructor(name) {
+    this.name = name;
+    this.children = {};
+  }
+  addChild(key, node) { this.children[key] = node; return node; }
+}
+
+const BOOK_ROOT = new BookNode('开局');
+
+function buildBook() {
+  function addLine(root, moves, name) {
+    let node = root;
+    for (let i = 0; i < moves.length; i++) {
+      const key = moves[i];
+      if (!node.children[key]) {
+        const n = new BookNode(i === 0 ? name : '');
+        node.addChild(key, n);
+        node = n;
+      } else {
+        node = node.children[key];
+      }
+    }
+    if (name && !node.name) node.name = name;
+  }
+
+  const L = {};
+
+  // 1. 中炮对屏风马 平炮兑车
+  L.zp_pd = [
+    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,8-0,7", "9,8-9,7", "0,1-2,2",
+    "6,2-5,2", "3,6-4,6", "9,7-3,7", "2,7-2,8", "3,7-3,6", "2,8-1,8",
+    "9,1-7,2", "0,3-1,4", "3,6-4,6", "1,8-1,6", "4,6-4,3", "0,2-2,4",
+  ];
+  // 2. 中炮对屏风马 平炮兑车(士6进5)
+  L.zp_pd_s = [
+    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,8-0,7", "9,8-9,7", "0,1-2,2",
+    "6,2-5,2", "3,6-4,6", "9,7-3,7", "2,7-2,8", "3,7-3,6", "2,8-1,8",
+    "9,1-7,2", "0,5-1,4", "3,6-4,6", "1,8-1,6", "4,6-3,6", "1,6-2,7",
+    "3,6-1,6",
+  ];
+  // 3. 五六炮对屏风马
+  L.zp_gc = [
+    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,1-2,2", "9,1-7,2", "2,7-2,4",
+    "9,8-9,7", "0,8-0,7", "7,4-1,4", "2,4-7,4",
+  ];
+  // 4. 顺炮直车对横车
+  L.sp_zc = [
+    "7,7-7,4", "2,7-2,4", "9,7-7,6", "0,7-2,6", "9,8-9,7", "0,0-1,0",
+    "7,4-1,4", "0,8-0,7",
+  ];
+  // 5. 顺炮横车对直车
+  L.sp_hc = [
+    "7,7-7,4", "2,7-2,4", "9,8-9,2", "2,7-1,7", "9,2-1,2", "0,1-2,2",
+  ];
+  // 6. 列炮
+  L.lp = [
+    "7,7-7,4", "2,7-2,4", "9,7-7,6", "0,7-2,6", "9,0-9,1", "0,0-1,0",
+  ];
+  // 7. 中炮对反宫马
+  L.fgm = [
+    "7,7-7,4", "0,1-2,2", "9,7-7,6", "2,7-2,5", "9,8-9,7", "0,7-2,6",
+    "6,2-5,2", "3,6-4,6", "9,1-7,2", "0,2-2,4",
+  ];
+  // 8. 中炮对单提马
+  L.dtm = [
+    "7,7-7,4", "0,1-2,2", "9,7-7,6", "0,7-2,8", "9,8-9,7", "2,7-2,5",
+    "6,2-5,2", "0,2-2,4",
+  ];
+  // 9. 中炮对屏风马 左马盘河
+  L.zp_pm = [
+    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,8-0,7", "9,8-9,7", "0,1-2,2",
+    "6,2-5,2", "3,6-4,6", "9,7-3,7", "2,7-2,8", "9,1-7,2", "2,6-4,5",
+  ];
+  // 10. 顺炮缓开车
+  L.sp_hh = [
+    "7,7-7,4", "2,7-2,4", "9,1-7,2", "0,7-2,6", "9,7-7,6", "0,1-2,2",
+    "9,8-9,7", "0,8-1,8",
+  ];
+
+  const lines = [
+    { moves: L.zp_pd,  name: '中炮对屏风马·平炮兑车' },
+    { moves: L.zp_pd_s, name: '中炮对屏风马·平炮兑车(士6进5)' },
+    { moves: L.zp_gc,   name: '五六炮对屏风马' },
+    { moves: L.sp_zc,   name: '顺炮直车对横车' },
+    { moves: L.sp_hc,   name: '顺炮横车对直车' },
+    { moves: L.lp,      name: '列炮' },
+    { moves: L.fgm,     name: '中炮对反宫马' },
+    { moves: L.dtm,     name: '中炮对单提马' },
+    { moves: L.zp_pm,   name: '中炮对屏风马·左马盘河' },
+    { moves: L.sp_hh,   name: '顺炮缓开车' },
+  ];
+
+  for (let line of lines) {
+    addLine(BOOK_ROOT, line.moves, line.name);
+  }
+}
+buildBook();
+
+let bookNode = BOOK_ROOT;
+let currentOpeningName = '当头炮';
+
+// ============ Initialize Board ============
+function initBoard() {
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  const PI = PIECE_NAMES;
+  const redBack = ['R','H','E','A','K','A','E','H','R'];
+  for (let c = 0; c < 9; c++) board[9][c] = { type: redBack[c], color: 'red', char: PI[redBack[c]].red };
+  board[7][1] = { type: 'C', color: 'red', char: PI.C.red };
+  board[7][7] = { type: 'C', color: 'red', char: PI.C.red };
+  for (let c = 0; c < 9; c += 2) board[6][c] = { type: 'P', color: 'red', char: PI.P.red };
+  const blackBack = ['R','H','E','A','K','A','E','H','R'];
+  for (let c = 0; c < 9; c++) board[0][c] = { type: blackBack[c], color: 'black', char: PI[blackBack[c]].black };
+  board[2][1] = { type: 'C', color: 'black', char: PI.C.black };
+  board[2][7] = { type: 'C', color: 'black', char: PI.C.black };
+  for (let c = 0; c < 9; c += 2) board[3][c] = { type: 'P', color: 'black', char: PI.P.black };
+  moveStack = []; redoStack = [];
+  selectedR = -1; hintsVisible = false;
+  currentPlayer = 'red';
+  bookNode = BOOK_ROOT; currentOpeningName = '当头炮';
+}
+
+// ============ Piece Movement Rules ============
+function inBoard(r, c) { return r >= 0 && r < 10 && c >= 0 && c < 9; }
+function inPalace(r, c, color) {
+  if (c < 3 || c > 5) return false;
+  return color === 'red' ? (r >= 7 && r <= 9) : (r >= 0 && r <= 2);
+}
+function ownSide(r, color) { return color === 'red' ? r >= 5 : r <= 4; }
+
+function getValidMoves(r, c, boardState) {
+  const piece = boardState[r][c];
+  if (!piece) return [];
+  const { type, color } = piece;
+  const moves = [];
+  const addIf = (tr, tc) => {
+    if (!inBoard(tr, tc)) return;
+    const target = boardState[tr][tc];
+    if (target && target.color === color) return;
+    moves.push([tr, tc]);
+  };
+  switch (type) {
+    case 'K': for (let [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) { const nr=r+dr,nc=c+dc; if (inPalace(nr,nc,color)) addIf(nr,nc); } break;
+    case 'A': for (let [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) { const nr=r+dr,nc=c+dc; if (inPalace(nr,nc,color)) addIf(nr,nc); } break;
+    case 'E': for (let [dr,dc] of [[-2,-2],[-2,2],[2,-2],[2,2]]) { const nr=r+dr,nc=c+dc; if (!inBoard(nr,nc)||!ownSide(nr,color)) continue; if (boardState[r+dr/2][c+dc/2]) continue; addIf(nr,nc); } break;
+    case 'R': for (let [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) { let nr=r+dr,nc=c+dc; while (inBoard(nr,nc)) { const t=boardState[nr][nc]; if (t) { if (t.color!==color) moves.push([nr,nc]); break; } moves.push([nr,nc]); nr+=dr; nc+=dc; } } break;
+    case 'H': const legs=[[-1,0,-2,-1],[-1,0,-2,1],[1,0,2,-1],[1,0,2,1],[0,-1,-1,-2],[0,-1,1,-2],[0,1,-1,2],[0,1,1,2]]; for (let [lr,lc,tr,tc] of legs) { const br=r+lr,bc=c+lc; if (!inBoard(br,bc)||boardState[br][bc]) continue; addIf(r+tr,c+tc); } break;
+    case 'C': for (let [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) { let nr=r+dr,nc=c+dc; let jumped=false; while (inBoard(nr,nc)) { const t=boardState[nr][nc]; if (!jumped) { if (t) jumped=true; else moves.push([nr,nc]); } else { if (t) { if (t.color!==color) moves.push([nr,nc]); break; } } nr+=dr;nc+=dc; } } break;
+    case 'P': if (color==='red') { addIf(r-1,c); if (r<=4) { addIf(r,c-1);addIf(r,c+1); } } else { addIf(r+1,c); if (r>=5) { addIf(r,c-1);addIf(r,c+1); } } break;
+  }
+  return moves;
+}
+
+function kingsExposed(boardState) {
+  let redK=null,blackK=null;
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) { const p=boardState[r][c]; if (p&&p.type==='K') { if (p.color==='red') redK=[r,c]; else blackK=[r,c]; } }
+  if (!redK||!blackK||redK[1]!==blackK[1]) return false;
+  for (let r=Math.min(redK[0],blackK[0])+1; r<Math.max(redK[0],blackK[0]); r++) if (boardState[r][redK[1]]) return false;
+  return true;
+}
+
+function isInCheck(boardState, color) {
+  let kingPos=null;
+  for (let r=0;r<ROWS&&!kingPos;r++) for (let c=0;c<COLS;c++) { const p=boardState[r][c]; if (p&&p.type==='K'&&p.color===color) { kingPos=[r,c]; break; } }
+  if (!kingPos) return true;
+  const enemy=color==='red'?'black':'red';
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) { const p=boardState[r][c]; if (p&&p.color===enemy) for (let [mr,mc] of getValidMoves(r,c,boardState)) if (mr===kingPos[0]&&mc===kingPos[1]) return true; }
+  return false;
+}
+
+function makeMoveOnBoard(boardState, fromR, fromC, toR, toC) {
+  const piece=boardState[fromR][fromC], captured=boardState[toR][toC];
+  const newBoard=boardState.map(row=>[...row]);
+  newBoard[toR][toC]=piece; newBoard[fromR][fromC]=null;
+  return {board:newBoard, captured};
+}
+
+// ============ UI Rendering ============
+const canvas = document.getElementById('board-canvas');
+const ctx = canvas.getContext('2d');
+const piecesContainer = document.getElementById('pieces-container');
+
+function getBoardPixelSize() {
+  const w = L.px * 2 + (COLS - 1) * L.cw;
+  const h = rowY(9) + L.py;
+  return { w, h };
+}
+
+function drawBoard() {
+  const dpr = window.devicePixelRatio || 1;
+  const { w, h } = getBoardPixelSize();
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.fillStyle = '#e8c88a';
+  ctx.fillRect(0, 0, w, h);
+
+  const left = L.px, right = L.px + (COLS-1) * L.cw;
+  const top = L.py, bot = rowY(9);
+  const midTop = rowY(4), midBot = rowY(5);
+
+  ctx.strokeStyle = '#5c2e00';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(left - 8, top - 8, right - left + 16, bot - top + 16);
+
+  ctx.strokeStyle = '#5c2e00';
+  ctx.lineWidth = 1.2;
+  for (let r = 0; r < 10; r++) {
+    const y = rowY(r);
+    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+  }
+  for (let c = 0; c < 9; c++) {
+    const x = L.px + c * L.cw;
+    if (c === 0 || c === 8) {
+      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bot); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, midTop); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, midBot); ctx.lineTo(x, bot); ctx.stroke();
+    }
+  }
+
+  const bp_l = L.px + 3*L.cw, bp_r = L.px + 5*L.cw;
+  ctx.beginPath(); ctx.moveTo(bp_l, rowY(0)); ctx.lineTo(bp_r, rowY(2)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bp_r, rowY(0)); ctx.lineTo(bp_l, rowY(2)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bp_l, rowY(7)); ctx.lineTo(bp_r, rowY(9)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bp_r, rowY(7)); ctx.lineTo(bp_l, rowY(9)); ctx.stroke();
+
+  const riverFont = Math.max(14, Math.min(26, 26 * L.s));
+  ctx.fillStyle = '#5c2e00';
+  ctx.font = `bold ${riverFont}px "KaiTi","STKaiti","SimSun",serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const riverMid = (rowY(4) + rowY(5)) / 2;
+  ctx.fillText('楚  河', left + 1.5 * L.cw, riverMid);
+  ctx.fillText('汉  界', left + 6.5 * L.cw, riverMid);
+
+  const starPoints = [[2,1],[2,7],[7,1],[7,7],[3,0],[3,2],[3,4],[3,6],[3,8],[6,0],[6,2],[6,4],[6,6],[6,8]];
+  for (const [r,c] of starPoints) {
+    const x = L.px + c * L.cw, y = rowY(r);
+    const s = 4 * L.s, g = 2 * L.s;
+    ctx.lineWidth = 1.2;
+    for (const [dx,dy] of [[1,1],[1,-1],[-1,1],[-1,-1]]) {
+      ctx.beginPath();
+      ctx.moveTo(x+dx*g, y+dy*(g+s));
+      ctx.lineTo(x+dx*g, y+dy*g);
+      ctx.lineTo(x+dx*(g+s), y+dy*g);
+      ctx.stroke();
+    }
+  }
+
+  const labelFont = Math.max(9, Math.min(12, 12 * L.s));
+  ctx.font = `${labelFont}px sans-serif`;
+  ctx.fillStyle = '#5c2e00';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const redLabels = ['九','八','七','六','五','四','三','二','一'];
+  for (let c = 0; c < 9; c++) ctx.fillText(redLabels[c], L.px + c * L.cw, bot + 4);
+  ctx.textBaseline = 'bottom';
+  const blackLabels = ['１','２','３','４','５','６','７','８','９'];
+  for (let c = 0; c < 9; c++) ctx.fillText(blackLabels[c], L.px + c * L.cw, top - 4);
+}
+
+function renderPieces() {
+  piecesContainer.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const piece = board[r][c];
+      if (!piece) continue;
+      const x = L.px + c * L.cw, y = rowY(r);
+      const el = document.createElement('div');
+      el.className = `piece ${piece.color}`;
+      if (selectedR === r && selectedC === c) el.classList.add('selected');
+      el.textContent = piece.char;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.width = L.ps + 'px';
+      el.style.height = L.ps + 'px';
+      el.style.fontSize = L.fs + 'px';
+      el.dataset.r = r; el.dataset.c = c;
+      el.addEventListener('click', e => { e.stopPropagation(); onPieceClick(r, c); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); onPieceClick(r, c); }, {passive: false});
+      frag.appendChild(el);
+    }
+  }
+  piecesContainer.appendChild(frag);
+}
+
+function renderHints() {
+  document.querySelectorAll('.hint-dot').forEach(el => el.remove());
+  const bookMoves = getBookMoves();
+  if (!hintsVisible && selectedR >= 0) {
+    const moves = getValidMoves(selectedR, selectedC, board);
+    const piece = board[selectedR][selectedC];
+    if (piece && piece.color === currentPlayer) {
+      for (let [tr, tc] of moves) {
+        const key = `${selectedR},${selectedC}-${tr},${tc}`;
+        if (bookMoves.has(key)) addHintDot(tr, tc, true);
+      }
+    }
+    return;
+  }
+  if (!hintsVisible) return;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const piece = board[r][c];
+      if (!piece || piece.color !== currentPlayer) continue;
+      const moves = getValidMoves(r, c, board);
+      for (let [tr, tc] of moves) {
+        const key = `${r},${c}-${tr},${tc}`;
+        if (bookMoves.has(key)) addHintDot(tr, tc, true);
+      }
+    }
+  }
+}
+
+function addHintDot(r, c, isBookMove) {
+  const x = L.px + c * L.cw, y = rowY(r);
+  const el = document.createElement('div');
+  const isCapture = board[r][c] !== null;
+  const dotSize = Math.max(12, Math.min(20, 20 * L.s));
+  el.className = `hint-dot ${isCapture ? 'capture' : ''}`;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.width = dotSize + 'px';
+  el.style.height = dotSize + 'px';
+  el.style.background = isCapture ? 'rgba(220,50,50,0.45)' : 'rgba(0,200,80,0.55)';
+  el.style.border = `2px solid ${isCapture ? 'rgba(200,40,40,0.7)' : 'rgba(0,180,60,0.8)'}`;
+  const handler = (e) => {
+    e.stopPropagation();
+    if (selectedR >= 0) {
+      const piece = board[selectedR][selectedC];
+      if (piece && piece.color === currentPlayer) {
+        const key = `${selectedR},${selectedC}-${r},${c}`;
+        if (getBookMoves().has(key)) { executeMove(selectedR, selectedC, r, c); return; }
+      }
+    }
+    const bookMoves = getBookMoves();
+    for (let pr = 0; pr < ROWS; pr++) {
+      for (let pc = 0; pc < COLS; pc++) {
+        const piece = board[pr][pc];
+        if (piece && piece.color === currentPlayer) {
+          const key = `${pr},${pc}-${r},${c}`;
+          if (bookMoves.has(key)) { executeMove(pr, pc, r, c); return; }
+        }
+      }
+    }
+  };
+  el.addEventListener('click', handler);
+  el.addEventListener('touchstart', e => { e.preventDefault(); handler(e); }, {passive: false});
+  piecesContainer.appendChild(el);
+}
+
+// ============ Opening Book Queries ============
+function getBookMoves() {
+  const result = new Map();
+  if (!bookNode) return result;
+  for (let [key, child] of Object.entries(bookNode.children)) result.set(key, child.name || '续着');
+  return result;
+}
+
+// ============ Move Execution ============
+function executeMove(fromR, fromC, toR, toC) {
+  const { board: newBoard, captured } = makeMoveOnBoard(board, fromR, fromC, toR, toC);
+  if (kingsExposed(newBoard)) return false;
+  if (isInCheck(newBoard, currentPlayer)) return false;
+  const piece = board[fromR][fromC];
+  moveStack.push({ fromR, fromC, toR, toC, piece: {...piece}, captured });
+  redoStack = [];
+  board = newBoard;
+  selectedR = -1; hintsVisible = false;
+  const key = `${fromR},${fromC}-${toR},${toC}`;
+  if (bookNode && bookNode.children[key]) {
+    bookNode = bookNode.children[key];
+    if (bookNode.name) currentOpeningName = bookNode.name;
+    if (Object.keys(bookNode.children).length === 0 && bookNode.name) {
+      setTimeout(() => alert(`🎉 恭喜完成「${bookNode.name}」全部着法！\n\n可继续自由走棋练习。`), 100);
+    }
+  } else { bookNode = null; }
+  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+  updateUI();
+  return true;
+}
+
+function undoMove() {
+  if (moveStack.length === 0) return;
+  const last = moveStack.pop(); redoStack.push(last);
+  board[last.fromR][last.fromC] = last.piece; board[last.toR][last.toC] = last.captured;
+  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+  selectedR = -1; hintsVisible = false;
+  rebuildBookNode(); updateUI();
+}
+
+function redoMove() {
+  if (redoStack.length === 0) return;
+  const next = redoStack.pop();
+  const { board: newBoard } = makeMoveOnBoard(board, next.fromR, next.fromC, next.toR, next.toC);
+  if (kingsExposed(newBoard)) { redoStack.push(next); return; }
+  board = newBoard; moveStack.push(next);
+  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+  selectedR = -1; hintsVisible = false;
+  rebuildBookNode(); updateUI();
+}
+
+function rebuildBookNode() {
+  bookNode = BOOK_ROOT; currentOpeningName = '当头炮';
+  for (let m of moveStack) {
+    const key = `${m.fromR},${m.fromC}-${m.toR},${m.toC}`;
+    if (bookNode && bookNode.children[key]) {
+      bookNode = bookNode.children[key];
+      if (bookNode.name) currentOpeningName = bookNode.name;
+    } else { bookNode = null; break; }
+  }
+}
+
+// ============ UI Update ============
+function updateUI() {
+  renderPieces();
+  renderHints();
+  updateMoveHistory();
+  updateControls();
+  updateOpeningName();
+  updateStatus();
+}
+
+function getMoveNotation(move) {
+  const char = move.piece.char;
+  const fromC = move.fromC, toC = move.toC, fromR = move.fromR, toR = move.toR;
+  const isHorizontal = fromR === toR;
+  const dir = isHorizontal ? '平' : (move.piece.color === 'red' ? (toR < fromR ? '进' : '退') : (toR > fromR ? '进' : '退'));
+  const colNum = move.piece.color === 'red' ? (9 - fromC) : (fromC + 1);
+  let num2;
+  if (isHorizontal) { num2 = move.piece.color === 'red' ? (9 - toC) : (toC + 1); }
+  else { const isHorse = move.piece.type === 'H'; num2 = isHorse ? (move.piece.color === 'red' ? (9 - toC) : (toC + 1)) : Math.abs(toR - fromR); }
+  const nums = ['０','一','二','三','四','五','六','七','八','九'];
+  const tn = n => n >= 0 && n <= 9 ? nums[n] : String(n);
+  return `${char}${tn(colNum)}${dir}${tn(num2)}${move.captured ? '！' : ''}`;
+}
+
+function updateMoveHistory() {
+  const list = document.getElementById('move-list');
+  list.innerHTML = '';
+  for (let i = 0; i < moveStack.length; i += 2) {
+    const num = Math.floor(i / 2) + 1;
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="num">${num}.</span> ${getMoveNotation(moveStack[i])}`;
+    if (i === moveStack.length - 1 || (i + 1 === moveStack.length - 1 && moveStack.length % 2 === 0)) li.classList.add('active');
+    list.appendChild(li);
+    if (i + 1 < moveStack.length) {
+      const li2 = document.createElement('li');
+      li2.innerHTML = `${getMoveNotation(moveStack[i+1])}`;
+      if (i + 1 === moveStack.length - 1) li2.classList.add('active');
+      list.appendChild(li2);
+    }
+  }
+}
+
+function updateControls() {
+  document.getElementById('undo-btn').disabled = moveStack.length === 0;
+  document.getElementById('redo-btn').disabled = redoStack.length === 0;
+}
+
+function updateOpeningName() {
+  const el = document.getElementById('opening-name');
+  if (bookNode) {
+    const depth = moveStack.length;
+    if (depth % 2 === 0) el.textContent = `${currentOpeningName} · 红方走棋`;
+    else el.textContent = `${currentOpeningName} · 黑方走棋`;
+  } else {
+    el.textContent = '已脱谱 · 自由走棋';
+  }
+}
+
+function updateStatus() {
+  const el = document.getElementById('status-bar');
+  if (selectedR >= 0) {
+    const piece = board[selectedR][selectedC];
+    if (piece && piece.color === currentPlayer) el.textContent = `选中 ${piece.char}，点击绿色提示位置走棋`;
+    else el.textContent = `当前 ${currentPlayer === 'red' ? '红' : '黑'}方走棋，请点击己方棋子`;
+  } else {
+    el.textContent = `当前 ${currentPlayer === 'red' ? '红' : '黑'}方走棋，点击棋子选中`;
+  }
+}
+
+// ============ Piece Click Handler ============
+function onPieceClick(r, c) {
+  const piece = board[r][c];
+  if (!piece) { selectedR = -1; hintsVisible = false; updateUI(); return; }
+  if (piece.color === currentPlayer) {
+    selectedR = r; selectedC = c; hintsVisible = false;
+    updateUI();
+  } else if (selectedR >= 0) {
+    const key = `${selectedR},${selectedC}-${r},${c}`;
+    if (getBookMoves().has(key)) {
+      executeMove(selectedR, selectedC, r, c);
+    } else {
+      selectedR = -1; hintsVisible = false; updateUI();
+    }
+  }
+}
+
+// ============ Full Re-render on Resize ============
+function fullRender() {
+  calcLayout();
+  drawBoard();
+  updateUI();
+}
+
+// ============ Resize Handler ============
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(fullRender, 150);
+});
+window.addEventListener('orientationchange', () => {
+  setTimeout(fullRender, 300);
+});
+
+// ============ Keyboard Shortcuts ============
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoMove(); }
+  else if (e.ctrlKey && e.key === 'z' && e.shiftKey) { e.preventDefault(); redoMove(); }
+  else if (e.key === 'h' || e.key === 'H') { e.preventDefault(); hintsVisible = !hintsVisible; updateUI(); }
+  else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); initBoard(); fullRender(); }
+});
+
+// ============ Init ============
+initBoard();
+fullRender();
+
+// Button handlers
+document.getElementById('undo-btn').addEventListener('click', undoMove);
+document.getElementById('redo-btn').addEventListener('click', redoMove);
+document.getElementById('hint-btn').addEventListener('click', () => { hintsVisible = !hintsVisible; updateUI(); });
+document.getElementById('reset-btn').addEventListener('click', () => { initBoard(); fullRender(); });
+</script>
+</body>
+</html>
