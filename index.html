@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>当头炮布局谱训练</title>
+<title>当头炮布局谱训练 · 重制版</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -25,7 +25,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  max-width: 820px;
+  max-width: 900px;
   width: 100%;
   margin: 0 auto;
 }
@@ -78,29 +78,22 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .piece:active { filter: brightness(1.1); }
-.piece.selected {
-  box-shadow: 0 0 0 3px #ffe44d, 0 0 12px #ffd700, 2px 3px 6px rgba(0,0,0,0.35);
-  z-index: 20;
-}
+.piece.selected { box-shadow: 0 0 0 3px #ffe44d, 0 0 12px #ffd700, 2px 3px 6px rgba(0,0,0,0.35); z-index: 20; }
 .piece.red {
   background: radial-gradient(circle at 35% 35%, #fff0e0, #f5d6c6 40%, #e8c8b0 80%, #dbb8a0);
-  color: #b22222;
-  border-color: #b22222;
+  color: #b22222; border-color: #b22222;
   text-shadow: 0 1px 1px rgba(255,200,150,0.5);
 }
 .piece.black {
   background: radial-gradient(circle at 35% 35%, #f0ece8, #d8d0c8 40%, #c0b8b0 80%, #a8a098);
-  color: #1a1a2e;
-  border-color: #1a1a2e;
+  color: #1a1a2e; border-color: #1a1a2e;
   text-shadow: 0 1px 1px rgba(255,255,255,0.3);
 }
 .hint-dot {
-  position: absolute;
-  border-radius: 50%;
+  position: absolute; border-radius: 50%;
   transform: translate(-50%, -50%);
   cursor: pointer; pointer-events: all;
   z-index: 5;
-  transition: transform 0.1s;
   animation: pulse 1.5s infinite;
   -webkit-tap-highlight-color: transparent;
 }
@@ -108,6 +101,28 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+/* Teaching mode square highlights */
+.square-highlight {
+  position: absolute; border-radius: 4px;
+  transform: translate(-50%, -50%);
+  pointer-events: none; z-index: 4;
+  border: 2.5px solid transparent;
+}
+.square-highlight.from {
+  border-color: #ffd700;
+  background: rgba(255,215,0,0.15);
+  width: 90%; height: 90%;
+}
+.square-highlight.to {
+  border-color: #00e68a;
+  background: rgba(0,230,138,0.2);
+  width: 100%; height: 100%;
+  animation: highlightPulse 1s infinite alternate;
+}
+@keyframes highlightPulse {
+  from { box-shadow: 0 0 0 2px rgba(0,230,138,0.3); }
+  to   { box-shadow: 0 0 0 6px rgba(0,230,138,0.6); }
 }
 
 #sidebar {
@@ -128,7 +143,8 @@ body {
 #controls button:hover { background: #b88858; }
 #controls button:active { transform: translateY(0); background: #b08050; }
 #controls button.primary { background: #b22222; color: #fff; border-color: #8a1a1a; }
-#controls button.primary:active { background: #991e1e; }
+#controls button.teaching { background: #2e7d32; color: #fff; border-color: #1b5e20; }
+#controls button.teaching.active { background: #1b5e20; }
 #controls button:disabled { opacity: 0.4; cursor: default; transform: none; }
 
 #move-history {
@@ -136,14 +152,8 @@ body {
   min-height: 80px; max-height: 180px; overflow-y: auto;
 }
 #move-history h3 { font-size: clamp(12px, 3vw, 14px); color: #5c2e00; margin-bottom: 6px; }
-#move-list {
-  list-style: none; display: flex; flex-wrap: wrap; gap: 2px 0;
-  font-size: clamp(11px, 2.8vw, 13px);
-}
-#move-list li {
-  padding: 2px 6px; border-radius: 3px; color: #3a1e00;
-  width: 50%;
-}
+#move-list { list-style: none; display: flex; flex-wrap: wrap; gap: 2px 0; font-size: clamp(11px, 2.8vw, 13px); }
+#move-list li { padding: 2px 6px; border-radius: 3px; color: #3a1e00; width: 50%; }
 #move-list li .num { color: #7a5a3a; margin-right: 4px; }
 #move-list li.active { background: rgba(0,200,80,0.2); font-weight: bold; }
 
@@ -156,18 +166,55 @@ body {
   display: inline-block; padding: 5px 10px; margin: 2px;
   border: 1px solid #b08050; border-radius: 6px;
   background: rgba(255,255,255,0.3); cursor: pointer;
-  font-size: clamp(11px, 2.8vw, 12px); color: #3a1e00;
+  font-size: clamp(11px, 2.8vw, 12px); color: #3a1e00; white-space: nowrap;
 }
 .var-btn:active { background: rgba(255,255,255,0.6); }
+.var-btn .tag { font-size: 10px; color: #b22222; margin-left: 4px; }
 
-#help-text { font-size: clamp(10px, 2.5vw, 12px); color: #7a5a3a; line-height: 1.6; }
+#teaching-panel {
+  background: rgba(0,0,0,0.08); border-radius: 8px; padding: 10px;
+  min-height: 50px; display: none;
+}
+#teaching-panel.visible { display: block; }
+#teaching-panel h3 { font-size: clamp(12px, 3vw, 14px); color: #5c2e00; margin-bottom: 4px; }
+#move-desc { font-size: clamp(13px, 3.2vw, 15px); color: #3a1e00; font-weight: bold; margin-bottom: 4px; }
+#annotation-text {
+  font-size: clamp(11px, 2.8vw, 13px); color: #5c2e00;
+  padding: 6px 8px; background: rgba(255,215,0,0.12); border-radius: 6px;
+  border-left: 3px solid #b8860b; margin-top: 4px; line-height: 1.5;
+  white-space: pre-wrap;
+}
 
 #status-bar {
   margin-top: 6px;
   font-size: clamp(12px, 3vw, 14px); color: #5c2e00;
-  min-height: 22px;
+  min-height: 22px; text-align: center;
+}
+
+/* Off-book dialog overlay */
+#dialog-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 100;
+  align-items: center; justify-content: center;
+}
+#dialog-overlay.visible { display: flex; }
+#dialog-box {
+  background: #d4a574; border-radius: 12px; padding: 20px 24px;
+  max-width: 360px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.5);
   text-align: center;
 }
+#dialog-box p { font-size: 14px; color: #3a1e00; margin-bottom: 6px; line-height: 1.6; }
+#dialog-box .sub { font-size: 12px; color: #7a5a3a; margin-bottom: 12px; }
+#dialog-box .book-move { font-size: 15px; color: #b22222; font-weight: bold; margin: 8px 0; }
+#dialog-box .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+#dialog-box button {
+  padding: 8px 16px; border: none; border-radius: 8px;
+  font-size: 13px; font-family: inherit; cursor: pointer;
+  background: #c49565; color: #3a1e00; border: 1px solid #b08050;
+}
+#dialog-box button.primary { background: #b22222; color: #fff; border-color: #8a1a1a; }
+#dialog-box button.primary:active { background: #991e1e; }
 
 @media (max-width: 700px) {
   body { padding: 6px; }
@@ -195,54 +242,59 @@ body {
     <button id="undo-btn" disabled>退一手</button>
     <button id="redo-btn" disabled>进一手</button>
     <button id="hint-btn" class="primary">提示</button>
+    <button id="teach-btn" class="teaching">教学</button>
     <button id="reset-btn">新局</button>
   </div>
   <div id="move-history">
     <h3>着法记录</h3>
     <ul id="move-list"></ul>
   </div>
+  <div id="teaching-panel">
+    <h3>当前着法解析</h3>
+    <div id="move-desc">—</div>
+    <div id="annotation-text"></div>
+  </div>
   <div id="variations">
     <h3>布局变着</h3>
     <div id="variation-list"><span style="color:#7a5a3a;font-size:13px;">走棋后显示可选变着</span></div>
   </div>
-  <div id="help-text">
-    <b>操作说明:</b><br>
-    • 点击己方棋子选中，再点绿色圆点走棋<br>
-    • 绿色 → 布局谱着法；红色 → 吃子<br>
-    • 键盘: Ctrl+Z 退 · Ctrl+Shift+Z 进 · H 提示 · R 新局
-  </div>
 </div>
+</div>
+
+<div id="dialog-overlay">
+  <div id="dialog-box">
+    <p>此着并非标准棋谱变招</p>
+    <div class="sub">是否查看建议的谱着？</div>
+    <div id="dialog-book-move" class="book-move"></div>
+    <div class="btn-row">
+      <button id="dialog-accept" class="primary">走谱着</button>
+      <button id="dialog-ignore">继续自由走棋</button>
+      <button id="dialog-cancel">取消</button>
+    </div>
+  </div>
 </div>
 
 <script>
-// ============ Dynamic Layout ============
-let L = {}; // current layout { cw, ch, px, py, rg, ps, fs, s }
-
+// ====================================================================
+// 1. 布局计算
+// ====================================================================
+let L = {};
 function calcLayout() {
   const wrapper = document.getElementById('board-wrapper');
   const avail = wrapper.clientWidth || 508;
-  // Base: cell 54, pad 38, river gap 30, piece 46, font 22
-  const baseBoardW = 38 * 2 + 8 * 54; // 508
+  const baseBoardW = 38 * 2 + 8 * 54;
   const s = Math.min(1, avail / baseBoardW);
   L = {
-    cw: 54 * s,   // cell width
-    ch: 54 * s,   // cell height
-    px: 38 * s,   // pad x
-    py: 38 * s,   // pad y
-    rg: 30 * s,   // river gap
-    ps: 46 * s,   // piece size
-    fs: 22 * s,   // font size
-    s: s,
+    cw: 54 * s, ch: 54 * s, px: 38 * s, py: 38 * s,
+    rg: 30 * s, ps: 46 * s, fs: 22 * s, s: s,
   };
 }
-
-function rowY(r) {
-  return L.py + r * L.ch + (r >= 5 ? L.rg - L.ch : 0);
-}
-
+function rowY(r) { return L.py + r * L.ch + (r >= 5 ? L.rg - L.ch : 0); }
 const ROWS = 10, COLS = 9;
 
-// ============ Constants ============
+// ====================================================================
+// 2. 常量
+// ====================================================================
 const PIECE_NAMES = {
   K: { red: '帅', black: '将' },
   A: { red: '仕', black: '士' },
@@ -253,122 +305,567 @@ const PIECE_NAMES = {
   P: { red: '兵', black: '卒' },
 };
 const PIECE_FROM_CHAR = {};
-for (let [k, v] of Object.entries(PIECE_NAMES)) {
+for (const [k, v] of Object.entries(PIECE_NAMES)) {
   PIECE_FROM_CHAR[v.red] = k; PIECE_FROM_CHAR[v.black] = k;
 }
+const CN_NUMS = ['０','一','二','三','四','五','六','七','八','九'];
+const RED_LABELS = ['九','八','七','六','五','四','三','二','一'];
+const BLACK_LABELS = ['１','２','３','４','５','６','７','８','９'];
 
-// ============ Board State ============
+// ====================================================================
+// 3. 完整棋规验证器
+// ====================================================================
+const Validator = {
+  inBoard(r, c) { return r >= 0 && r < 10 && c >= 0 && c < 9; },
+  inPalace(r, c, color) {
+    if (c < 3 || c > 5) return false;
+    return color === 'red' ? (r >= 7 && r <= 9) : (r >= 0 && r <= 2);
+  },
+  ownSide(r, color) { return color === 'red' ? r >= 5 : r <= 4; },
+
+  getValidMoves(r, c, boardState) {
+    const piece = boardState[r][c];
+    if (!piece) return [];
+    const { type, color } = piece;
+    const moves = [];
+    const addIf = (tr, tc) => {
+      if (!this.inBoard(tr, tc)) return;
+      const target = boardState[tr][tc];
+      if (target && target.color === color) return;
+      moves.push([tr, tc]);
+    };
+    switch (type) {
+      case 'K': // 将/帅：九宫内一步
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+          const nr = r+dr, nc = c+dc;
+          if (this.inPalace(nr, nc, color)) addIf(nr, nc);
+        }
+        // 将帅对脸（飞将）：同列无阻隔可吃对方将
+        {
+          const enemyColor = color === 'red' ? 'black' : 'red';
+          for (let nr = r-1; nr >= 0; nr--) {
+            const t = boardState[nr][c];
+            if (t) {
+              if (t.type === 'K' && t.color === enemyColor) { /* 飞将规则在 kingsExposed 中处理, 不作为走法返回 */ }
+              break;
+            }
+          }
+        }
+        break;
+      case 'A': // 仕/士：九宫斜走一步
+        for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
+          const nr = r+dr, nc = c+dc;
+          if (this.inPalace(nr, nc, color)) addIf(nr, nc);
+        }
+        break;
+      case 'E': // 相/象：田字对角，防塞象眼
+        for (const [dr, dc] of [[-2,-2],[-2,2],[2,-2],[2,2]]) {
+          const nr = r+dr, nc = c+dc;
+          if (!this.inBoard(nr, nc) || !this.ownSide(nr, color)) continue;
+          const eyeR = (r + nr) / 2, eyeC = (c + nc) / 2;
+          if (boardState[eyeR][eyeC]) continue; // 塞象眼
+          addIf(nr, nc);
+        }
+        break;
+      case 'R': // 车：直线不限距离
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+          let nr = r+dr, nc = c+dc;
+          while (this.inBoard(nr, nc)) {
+            const t = boardState[nr][nc];
+            if (t) { if (t.color !== color) moves.push([nr, nc]); break; }
+            moves.push([nr, nc]); nr += dr; nc += dc;
+          }
+        }
+        break;
+      case 'H': // 马：日字对角，防蹩马腿
+        {
+          const legs = [
+            [-1, 0, -2, -1], [-1, 0, -2, 1],
+            [ 1, 0,  2, -1], [ 1, 0,  2, 1],
+            [ 0,-1, -1, -2], [ 0,-1,  1, -2],
+            [ 0, 1, -1,  2], [ 0, 1,  1,  2],
+          ];
+          for (const [lr, lc, tr, tc] of legs) {
+            const legR = r + lr, legC = c + lc;
+            if (!this.inBoard(legR, legC) || boardState[legR][legC]) continue;
+            addIf(r + tr, c + tc);
+          }
+        }
+        break;
+      case 'C': // 炮：直线不限，吃子需隔一子
+        for (const [dr, dc] of [[-1,0],[1,0],[0,-1],[0,1]]) {
+          let nr = r+dr, nc = c+dc, jumped = false;
+          while (this.inBoard(nr, nc)) {
+            const t = boardState[nr][nc];
+            if (!jumped) {
+              if (t) jumped = true;
+              else moves.push([nr, nc]);
+            } else {
+              if (t) { if (t.color !== color) moves.push([nr, nc]); break; }
+            }
+            nr += dr; nc += dc;
+          }
+        }
+        break;
+      case 'P': // 兵/卒：未过河只能前进，过河可横走
+        if (color === 'red') {
+          addIf(r-1, c);
+          if (r <= 4) { addIf(r, c-1); addIf(r, c+1); }
+        } else {
+          addIf(r+1, c);
+          if (r >= 5) { addIf(r, c-1); addIf(r, c+1); }
+        }
+        break;
+    }
+    return moves;
+  },
+
+  // 将帅对脸检测
+  kingsExposed(boardState) {
+    let redK = null, blackK = null;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const p = boardState[r][c];
+        if (p && p.type === 'K') {
+          if (p.color === 'red') redK = [r, c];
+          else blackK = [r, c];
+        }
+      }
+    }
+    if (!redK || !blackK || redK[1] !== blackK[1]) return false;
+    for (let r = Math.min(redK[0], blackK[0]) + 1; r < Math.max(redK[0], blackK[0]); r++) {
+      if (boardState[r][redK[1]]) return false;
+    }
+    return true;
+  },
+
+  // 某方是否被将军
+  isInCheck(boardState, color) {
+    let kingPos = null;
+    for (let r = 0; r < ROWS && !kingPos; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const p = boardState[r][c];
+        if (p && p.type === 'K' && p.color === color) { kingPos = [r, c]; break; }
+      }
+    }
+    if (!kingPos) return true;
+    // 飞将检查
+    const enemyColor = color === 'red' ? 'black' : 'red';
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const p = boardState[r][c];
+        if (p && p.color === enemyColor) {
+          for (const [mr, mc] of this.getValidMoves(r, c, boardState)) {
+            if (mr === kingPos[0] && mc === kingPos[1]) return true;
+          }
+        }
+      }
+    }
+    return false;
+  },
+
+  // 检查某步走法是否合法（不送将）
+  isMoveLegal(boardState, fromR, fromC, toR, toC, color) {
+    const newBoard = boardState.map(row => [...row]);
+    newBoard[toR][toC] = newBoard[fromR][fromC];
+    newBoard[fromR][fromC] = null;
+    // 不能送将
+    if (this.isInCheck(newBoard, color)) return false;
+    // 不能将帅对脸
+    if (this.kingsExposed(newBoard)) return false;
+    return true;
+  },
+
+  // 检测某方是否被将杀
+  isCheckmate(boardState, color) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const p = boardState[r][c];
+        if (!p || p.color !== color) continue;
+        for (const [tr, tc] of this.getValidMoves(r, c, boardState)) {
+          const newBoard = boardState.map(row => [...row]);
+          newBoard[tr][tc] = newBoard[r][c];
+          newBoard[r][c] = null;
+          if (!this.isInCheck(newBoard, color) && !this.kingsExposed(newBoard)) return false;
+        }
+      }
+    }
+    return true; // 无合法着法 = 将杀
+  },
+};
+
+// ====================================================================
+// 4. 棋谱树结构 (支持多分支 + 标注)
+// ====================================================================
+/**
+ * PgnNode — 棋谱树节点
+ *   children: [{ move: {fromR,fromC,toR,toC}, node: PgnNode, mainLine: bool }]
+ *   name: 开局/变体名称
+ *   comment: 战术注解
+ *   moveDesc: 本步中文描述
+ */
+class PgnNode {
+  constructor() {
+    this.children = [];
+    this.name = '';
+    this.comment = '';
+    this.moveDesc = '';
+  }
+  addChild(move, mainLine) {
+    const child = { move, node: new PgnNode(), mainLine: !!mainLine };
+    this.children.push(child);
+    return child.node;
+  }
+  findChild(move) {
+    for (const child of this.children) {
+      if (child.move.fromR === move.fromR && child.move.fromC === move.fromC &&
+          child.move.toR === move.toR && child.move.toC === move.toC) {
+        return child;
+      }
+    }
+    return null;
+  }
+  hasMultipleBranches() {
+    return this.children.length > 1;
+  }
+  getMainLineChild() {
+    for (const child of this.children) if (child.mainLine) return child;
+    return this.children.length > 0 ? this.children[0] : null;
+  }
+}
+
+// ====================================================================
+// 5. 棋谱行走器 (BookWalker)
+// ====================================================================
+class BookWalker {
+  constructor(root) {
+    this.root = root;
+    this.current = root;
+    this.path = []; // 走过的 child 记录
+  }
+  /** 在当前节点找匹配子节点，前进 */
+  advance(move) {
+    const child = this.current.findChild(move);
+    if (!child) return null;
+    this.path.push({ from: this.current, child });
+    this.current = child.node;
+    return child;
+  }
+  /** 退一手 */
+  retreat() {
+    if (this.path.length === 0) return false;
+    const entry = this.path.pop();
+    this.current = entry.from;
+    return true;
+  }
+  /** 获取当前节点的所有变着 */
+  getVariations() {
+    return this.current.children.map((child, idx) => ({
+      move: child.move,
+      name: child.node.name || '',
+      comment: child.node.comment || '',
+      mainLine: child.mainLine,
+      index: idx,
+    }));
+  }
+  /** 从根节点沿 moveStack 重建路径 */
+  rebuild(moveStack) {
+    this.current = this.root;
+    this.path = [];
+    for (const m of moveStack) {
+      const child = this.advance({ fromR: m.fromR, fromC: m.fromC, toR: m.toR, toC: m.toC });
+      if (!child) return false;
+    }
+    return true;
+  }
+  /** 当前是否在谱 */
+  isInBook() { return this.current !== null; }
+  /** 当前节点是否还有后续 */
+  hasNext() { return this.current.children.length > 0; }
+  /** 获取当前节点的名称（开局/变体名） */
+  getCurrentName() {
+    if (this.path.length === 0) return '当头炮';
+    // 从最近的有 name 的祖先节点回溯
+    for (let i = this.path.length - 1; i >= 0; i--) {
+      if (this.path[i].child.node.name) return this.path[i].child.node.name;
+    }
+    return '当头炮';
+  }
+  /** 获取当前应走的谱着（主变第一着） */
+  getBookHint() {
+    const main = this.current.getMainLineChild();
+    if (main) return main;
+    return this.current.children[0] || null;
+  }
+  /** 获取当前节点的注解（优先当前，其次父节点已落子注解） */
+  getComment() { return this.current.comment || ''; }
+  /** 获取当前步的描述 */
+  getMoveDesc() { return this.current.moveDesc || ''; }
+}
+
+// ====================================================================
+// 6. 开局棋谱数据
+// ====================================================================
+const ROOT = new PgnNode();
+ROOT.name = '当头炮';
+
+function addMove(fromR, fromC, toR, toC) {
+  return { fromR, fromC, toR, toC };
+}
+const M = addMove; // 简写
+
+function buildOpeningTree(root) {
+  // ---- 工具：添加一条完整棋谱 ----
+  function addLine(node, moves, name, annotations) {
+    let cur = node;
+    for (let i = 0; i < moves.length; i++) {
+      const move = moves[i];
+      // 尝试匹配已有子节点
+      let childWrapper = cur.findChild(move);
+      const isLast = i === moves.length - 1;
+      if (!childWrapper) {
+        const newNode = cur.addChild(move, true);
+        childWrapper = { move, node: newNode, mainLine: true };
+      }
+      const childNode = childWrapper.node;
+      // 在关键节点上挂注解
+      if (annotations && annotations[i]) {
+        if (!childNode.comment || annotations[i].force) {
+          childNode.comment = annotations[i].text || '';
+          childNode.moveDesc = annotations[i].desc || '';
+        }
+      }
+      if (isLast && name) childNode.name = name;
+      cur = childNode;
+    }
+  }
+
+  // ================================================================
+  // 1. 中炮对屏风马 平炮兑车 (18步)
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(0,7,2,6),  // 1. 炮二平五  马8进7
+    M(9,7,7,6), M(0,8,0,7),  // 2. 马二进三  车9平8
+    M(9,8,9,7), M(0,1,2,2),  // 3. 车一平二  卒7进1
+    M(6,2,5,2), M(3,6,4,6),  // 4. 兵七进一  象3进5
+    M(9,7,3,7), M(2,7,2,8),  // 5. 车二进六  炮8平9（平炮兑车）
+    M(3,7,3,6), M(2,8,1,8),  // 6. 车二平三  炮9退1
+    M(9,1,7,2), M(0,3,1,4),  // 7. 马八进七  士4进5
+    M(3,6,4,6), M(1,8,1,6),  // 8. 车三平四  炮9平7
+    M(4,6,4,3), M(0,2,2,4),  // 9. 车四进二  炮7进1  (等招)
+  ], '中炮对屏风马·平炮兑车', {
+    4:  { desc: '兵七进一', text: '挺七兵活左马，形成中炮过河车对屏风马的基本阵型' },
+    8:  { desc: '车二进六', text: '过河车压马，是急进型走法' },
+    9:  { desc: '炮8平9', text: '★ 平炮兑车！黑方放弃边马，选择兑车简化局面，是屏风马三大主流变例之一' },
+    11: { desc: '车二平三', text: '压马保持先手，如兑回则变化简单' },
+    16: { desc: '车三平四', text: '避开炮火，平四路准备过兵攻马' },
+  });
+
+  // ================================================================
+  // 2. 中炮对屏风马 平炮兑车(士6进5) 变例
+  // ================================================================
+  {
+    // 前6步相同，第7步黑方走士6进5（而非士4进5）
+    const moves = [
+      M(7,7,7,4), M(0,7,2,6),
+      M(9,7,7,6), M(0,8,0,7),
+      M(9,8,9,7), M(0,1,2,2),
+      M(6,2,5,2), M(3,6,4,6),
+      M(9,7,3,7), M(2,7,2,8),
+      M(3,7,3,6), M(2,8,1,8),
+      M(9,1,7,2), M(0,5,1,4),  // 士6进5（区别于士4进5）
+      M(3,6,4,6), M(1,8,1,6),
+      M(4,6,3,6), M(1,6,2,7),
+      M(3,6,1,6),
+    ];
+    addLine(ROOT, moves, '中炮对屏风马·平炮兑车(士6进5)', {
+      4:  { desc: '兵七进一', text: '挺七兵活左马' },
+      9:  { desc: '炮8平9', text: '平炮兑车' },
+      13: { desc: '士6进5', text: '补左士，准备出贴身车，与士4进5各有千秋' },
+    });
+  }
+
+  // ================================================================
+  // 3. 五六炮对屏风马
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(0,7,2,6),
+    M(9,7,7,6), M(0,1,2,2),
+    M(9,1,7,2), M(2,7,2,4),  // 炮八平六（五六炮）
+    M(9,8,9,7), M(0,8,0,7),
+    M(7,4,1,4), M(2,4,7,4),  // 炮五进四 炮8平5
+  ], '五六炮对屏风马', {
+    4:  { desc: '炮八平六', text: '★ 五六炮！右炮平六路，兼顾中线和右翼，阵型稳健' },
+    8:  { desc: '炮五进四', text: '打中卒争先，是五六炮的典型战术' },
+    9:  { desc: '炮8平5', text: '黑方还中炮对攻，形成对抢先手局面' },
+  });
+
+  // ================================================================
+  // 4. 顺炮直车对横车
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(2,7,2,4),  // 炮二平五  炮8平5（顺手炮）
+    M(9,7,7,6), M(0,7,2,6),  // 马二进三  马8进7
+    M(9,8,9,7), M(0,0,1,0),  // 车一平二  车9进1（横车）
+    M(7,4,1,4), M(0,8,0,7),  // 炮五进四  士4进5
+  ], '顺炮直车对横车', {
+    0:  { desc: '炮二平五', text: '当头炮！' },
+    1:  { desc: '炮8平5', text: '★ 顺手炮！双方同侧列炮，对攻激烈，是古典开局中的主流' },
+    4:  { desc: '车九进一', text: '黑方出横车，准备过宫威胁红方右翼' },
+    6:  { desc: '炮五进四', text: '打中卒镇中，配合直车形成攻势' },
+  });
+
+  // ================================================================
+  // 5. 顺炮横车对直车
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(2,7,2,4),
+    M(9,8,9,2), M(2,7,1,7),  // 车一进一（横车）  马8进7
+    M(9,2,1,2), M(0,1,2,2),  // 车一平六  卒7进1
+  ], '顺炮横车对直车', {
+    2:  { desc: '车一进一', text: '★ 横车！红方起横车准备过宫占肋，是横车对直车的典型布局' },
+    3:  { desc: '马8进7', text: '黑方跳正马，也可选择马8进9边马' },
+    4:  { desc: '车一平六', text: '过宫占肋，控制将门' },
+  });
+
+  // ================================================================
+  // 6. 列炮
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(2,7,2,4),
+    M(9,7,7,6), M(0,7,2,6),
+    M(9,0,9,1), M(0,0,1,0),  // 车九进一  车9进1（列炮出横车）
+  ], '列炮', {
+    0:  { desc: '炮二平五', text: '当头炮！' },
+    1:  { desc: '炮8平5', text: '★ 列手炮（逆手炮）！双方炮在不同侧，形成对称性对攻' },
+    4:  { desc: '车九进一', text: '红方起横车准备过宫，应对列炮的长距离对攻' },
+  });
+
+  // ================================================================
+  // 7. 中炮对反宫马
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(0,1,2,2),  // 炮二平五  卒7进1
+    M(9,7,7,6), M(2,7,2,5),  // 马二进三  炮8平6（反宫马）
+    M(9,8,9,7), M(0,7,2,6),  // 车一平二  马8进7
+    M(6,2,5,2), M(3,6,4,6),  // 兵七进一  象3进5
+    M(9,1,7,2), M(0,2,2,4),  // 马八进七  卒3进1
+  ], '中炮对反宫马', {
+    1:  { desc: '卒7进1', text: '黑方起卒制马，准备走反宫马（士角炮）' },
+    2:  { desc: '马二进三', text: '跳正马动员' },
+    3:  { desc: '炮8平6', text: '★ 反宫马！又称"夹炮屏风"，炮在士角兼守兼攻，是弹性很强的后手布局' },
+  });
+
+  // ================================================================
+  // 8. 中炮对单提马
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(0,1,2,2),
+    M(9,7,7,6), M(0,7,2,8),  // 马二进三  马8进9（单提马）
+    M(9,8,9,7), M(2,7,2,5),  // 车一平二  炮8平6
+    M(6,2,5,2), M(0,2,2,4),  // 兵七进一  卒3进1
+  ], '中炮对单提马', {
+    2:  { desc: '马二进三', text: '红跳正马' },
+    3:  { desc: '马8进9', text: '★ 单提马！黑马屯边，左翼子力集中，但中路防御偏弱' },
+    5:  { desc: '炮8平6', text: '平炮士角，弥补单提马中路薄弱的问题' },
+  });
+
+  // ================================================================
+  // 9. 中炮对屏风马 左马盘河
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(0,7,2,6),
+    M(9,7,7,6), M(0,8,0,7),
+    M(9,8,9,7), M(0,1,2,2),
+    M(6,2,5,2), M(3,6,4,6),
+    M(9,7,3,7), M(2,7,2,8),
+    M(9,1,7,2), M(2,6,4,5),  // 马八进七  马7进6（左马盘河）
+  ], '中炮对屏风马·左马盘河', {
+    9:  { desc: '炮8平9', text: '平炮兑车引出过河车' },
+    11: { desc: '马7进6', text: '★ 左马盘河！黑马7进6盘踞河头，伏有炮8平7打车、马6进7踏兵等多种手段，是对抗过河车的凌厉着法' },
+  });
+
+  // ================================================================
+  // 10. 顺炮缓开车
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(2,7,2,4),
+    M(9,1,7,2), M(0,7,2,6),  // 马八进七  马8进7
+    M(9,7,7,6), M(0,1,2,2),  // 马二进三  卒7进1
+    M(9,8,9,7), M(0,8,1,8),  // 车一平二  车9平8
+  ], '顺炮缓开车', {
+    2:  { desc: '马八进七', text: '★ 缓开车！红方先跳左马再出右马，保留横车变化，是灵活的战略选择' },
+  });
+
+  // ================================================================
+  // 11. 中炮对屏风马 双炮过河
+  // ================================================================
+  addLine(ROOT, [
+    M(7,7,7,4), M(0,7,2,6),
+    M(9,7,7,6), M(0,8,0,7),
+    M(9,8,9,7), M(0,1,2,2),
+    M(9,1,7,2), M(2,7,3,7),  // 马八进七  炮8进4（双炮过河）
+  ], '中炮对屏风马·双炮过河', {
+    7:  { desc: '马八进七', text: '红跳边马' },
+    8:  { desc: '炮8进4', text: '★ 双炮过河！黑双炮过河压制红方兵线，是激烈的对攻变例' },
+  });
+
+  // ================================================================
+  // 12. 起马局转中炮
+  // ================================================================
+  addLine(ROOT, [
+    M(9,1,7,2), M(0,1,2,2),  // 马八进七  卒7进1
+    M(7,7,7,4), M(2,7,2,4),  // 炮二平五  炮8平5（还中炮）
+    M(9,7,7,6), M(0,7,2,6),
+  ], '起马局转中炮', {
+    0:  { desc: '马八进七', text: '起马局开局，先运马再架炮，意图迷惑对方' },
+    2:  { desc: '炮二平五', text: '再架中炮！形成中炮对顺炮的格局，但跳马顺序与标准顺炮不同' },
+  });
+}
+buildOpeningTree(ROOT);
+
+// ====================================================================
+// 7. 记谱转换 (坐标 → 中文)
+// ====================================================================
+function getMoveNotation(move, piece) {
+  if (!piece) return '??';
+  const char = piece.char;
+  const fromC = move.fromC, toC = move.toC, fromR = move.fromR, toR = move.toR;
+  const isHorizontal = fromR === toR;
+  const isRed = piece.color === 'red';
+  const dir = isHorizontal ? '平'
+    : (isRed ? (toR < fromR ? '进' : '退') : (toR > fromR ? '进' : '退'));
+  const colNum = isRed ? (9 - fromC) : (fromC + 1);
+  let num2;
+  if (isHorizontal) {
+    num2 = isRed ? (9 - toC) : (toC + 1);
+  } else {
+    const isHorse = piece.type === 'H' || piece.type === 'A' || piece.type === 'E';
+    // 马/仕/相用终点列数，其他用步数
+    if (piece.type === 'H' || piece.type === 'A' || piece.type === 'E') {
+      num2 = isRed ? (9 - toC) : (toC + 1);
+    } else {
+      num2 = Math.abs(toR - fromR);
+    }
+  }
+  const tn = n => (n >= 0 && n <= 9) ? CN_NUMS[n] : String(n);
+  return `${char}${tn(colNum)}${dir}${tn(num2)}`;
+}
+
+// ====================================================================
+// 8. 游戏状态
+// ====================================================================
 let board = [];
-let moveStack = [];
+let moveStack = [];    // 已走的棋 { fromR,fromC,toR,toC, piece, captured, notation }
 let redoStack = [];
 let selectedR = -1, selectedC = -1;
 let currentPlayer = 'red';
 let hintsVisible = false;
-
-// ============ Opening Book Tree ============
-class BookNode {
-  constructor(name) {
-    this.name = name;
-    this.children = {};
-  }
-  addChild(key, node) { this.children[key] = node; return node; }
-}
-
-const BOOK_ROOT = new BookNode('开局');
-
-function buildBook() {
-  function addLine(root, moves, name) {
-    let node = root;
-    for (let i = 0; i < moves.length; i++) {
-      const key = moves[i];
-      if (!node.children[key]) {
-        const n = new BookNode(i === 0 ? name : '');
-        node.addChild(key, n);
-        node = n;
-      } else {
-        node = node.children[key];
-      }
-    }
-    if (name && !node.name) node.name = name;
-  }
-
-  const L = {};
-
-  // 1. 中炮对屏风马 平炮兑车
-  L.zp_pd = [
-    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,8-0,7", "9,8-9,7", "0,1-2,2",
-    "6,2-5,2", "3,6-4,6", "9,7-3,7", "2,7-2,8", "3,7-3,6", "2,8-1,8",
-    "9,1-7,2", "0,3-1,4", "3,6-4,6", "1,8-1,6", "4,6-4,3", "0,2-2,4",
-  ];
-  // 2. 中炮对屏风马 平炮兑车(士6进5)
-  L.zp_pd_s = [
-    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,8-0,7", "9,8-9,7", "0,1-2,2",
-    "6,2-5,2", "3,6-4,6", "9,7-3,7", "2,7-2,8", "3,7-3,6", "2,8-1,8",
-    "9,1-7,2", "0,5-1,4", "3,6-4,6", "1,8-1,6", "4,6-3,6", "1,6-2,7",
-    "3,6-1,6",
-  ];
-  // 3. 五六炮对屏风马
-  L.zp_gc = [
-    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,1-2,2", "9,1-7,2", "2,7-2,4",
-    "9,8-9,7", "0,8-0,7", "7,4-1,4", "2,4-7,4",
-  ];
-  // 4. 顺炮直车对横车
-  L.sp_zc = [
-    "7,7-7,4", "2,7-2,4", "9,7-7,6", "0,7-2,6", "9,8-9,7", "0,0-1,0",
-    "7,4-1,4", "0,8-0,7",
-  ];
-  // 5. 顺炮横车对直车
-  L.sp_hc = [
-    "7,7-7,4", "2,7-2,4", "9,8-9,2", "2,7-1,7", "9,2-1,2", "0,1-2,2",
-  ];
-  // 6. 列炮
-  L.lp = [
-    "7,7-7,4", "2,7-2,4", "9,7-7,6", "0,7-2,6", "9,0-9,1", "0,0-1,0",
-  ];
-  // 7. 中炮对反宫马
-  L.fgm = [
-    "7,7-7,4", "0,1-2,2", "9,7-7,6", "2,7-2,5", "9,8-9,7", "0,7-2,6",
-    "6,2-5,2", "3,6-4,6", "9,1-7,2", "0,2-2,4",
-  ];
-  // 8. 中炮对单提马
-  L.dtm = [
-    "7,7-7,4", "0,1-2,2", "9,7-7,6", "0,7-2,8", "9,8-9,7", "2,7-2,5",
-    "6,2-5,2", "0,2-2,4",
-  ];
-  // 9. 中炮对屏风马 左马盘河
-  L.zp_pm = [
-    "7,7-7,4", "0,7-2,6", "9,7-7,6", "0,8-0,7", "9,8-9,7", "0,1-2,2",
-    "6,2-5,2", "3,6-4,6", "9,7-3,7", "2,7-2,8", "9,1-7,2", "2,6-4,5",
-  ];
-  // 10. 顺炮缓开车
-  L.sp_hh = [
-    "7,7-7,4", "2,7-2,4", "9,1-7,2", "0,7-2,6", "9,7-7,6", "0,1-2,2",
-    "9,8-9,7", "0,8-1,8",
-  ];
-
-  const lines = [
-    { moves: L.zp_pd,  name: '中炮对屏风马·平炮兑车' },
-    { moves: L.zp_pd_s, name: '中炮对屏风马·平炮兑车(士6进5)' },
-    { moves: L.zp_gc,   name: '五六炮对屏风马' },
-    { moves: L.sp_zc,   name: '顺炮直车对横车' },
-    { moves: L.sp_hc,   name: '顺炮横车对直车' },
-    { moves: L.lp,      name: '列炮' },
-    { moves: L.fgm,     name: '中炮对反宫马' },
-    { moves: L.dtm,     name: '中炮对单提马' },
-    { moves: L.zp_pm,   name: '中炮对屏风马·左马盘河' },
-    { moves: L.sp_hh,   name: '顺炮缓开车' },
-  ];
-
-  for (let line of lines) {
-    addLine(BOOK_ROOT, line.moves, line.name);
-  }
-}
-buildBook();
-
-let bookNode = BOOK_ROOT;
+let teachingMode = false;
+let bookWalker = new BookWalker(ROOT);
 let currentOpeningName = '当头炮';
+let pendingDialog = null; // { fromR,fromC,toR,toC } 待确认的脱谱着法
 
-// ============ Initialize Board ============
 function initBoard() {
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
   const PI = PIECE_NAMES;
@@ -383,75 +880,179 @@ function initBoard() {
   board[2][7] = { type: 'C', color: 'black', char: PI.C.black };
   for (let c = 0; c < 9; c += 2) board[3][c] = { type: 'P', color: 'black', char: PI.P.black };
   moveStack = []; redoStack = [];
-  selectedR = -1; hintsVisible = false;
+  selectedR = -1; selectedC = -1; hintsVisible = false; teachingMode = false;
   currentPlayer = 'red';
-  bookNode = BOOK_ROOT; currentOpeningName = '当头炮';
+  bookWalker = new BookWalker(ROOT);
+  currentOpeningName = '当头炮';
+  pendingDialog = null;
+  document.getElementById('dialog-overlay').classList.remove('visible');
+  document.getElementById('teach-btn').classList.remove('active');
 }
 
-// ============ Piece Movement Rules ============
-function inBoard(r, c) { return r >= 0 && r < 10 && c >= 0 && c < 9; }
-function inPalace(r, c, color) {
-  if (c < 3 || c > 5) return false;
-  return color === 'red' ? (r >= 7 && r <= 9) : (r >= 0 && r <= 2);
-}
-function ownSide(r, color) { return color === 'red' ? r >= 5 : r <= 4; }
+// ====================================================================
+// 9. 核心走法执行
+// ====================================================================
+function executeMove(fromR, fromC, toR, toC) {
+  const piece = board[fromR][fromC];
+  if (!piece) return false;
 
-function getValidMoves(r, c, boardState) {
-  const piece = boardState[r][c];
-  if (!piece) return [];
-  const { type, color } = piece;
-  const moves = [];
-  const addIf = (tr, tc) => {
-    if (!inBoard(tr, tc)) return;
-    const target = boardState[tr][tc];
-    if (target && target.color === color) return;
-    moves.push([tr, tc]);
-  };
-  switch (type) {
-    case 'K': for (let [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) { const nr=r+dr,nc=c+dc; if (inPalace(nr,nc,color)) addIf(nr,nc); } break;
-    case 'A': for (let [dr,dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) { const nr=r+dr,nc=c+dc; if (inPalace(nr,nc,color)) addIf(nr,nc); } break;
-    case 'E': for (let [dr,dc] of [[-2,-2],[-2,2],[2,-2],[2,2]]) { const nr=r+dr,nc=c+dc; if (!inBoard(nr,nc)||!ownSide(nr,color)) continue; if (boardState[r+dr/2][c+dc/2]) continue; addIf(nr,nc); } break;
-    case 'R': for (let [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) { let nr=r+dr,nc=c+dc; while (inBoard(nr,nc)) { const t=boardState[nr][nc]; if (t) { if (t.color!==color) moves.push([nr,nc]); break; } moves.push([nr,nc]); nr+=dr; nc+=dc; } } break;
-    case 'H': const legs=[[-1,0,-2,-1],[-1,0,-2,1],[1,0,2,-1],[1,0,2,1],[0,-1,-1,-2],[0,-1,1,-2],[0,1,-1,2],[0,1,1,2]]; for (let [lr,lc,tr,tc] of legs) { const br=r+lr,bc=c+lc; if (!inBoard(br,bc)||boardState[br][bc]) continue; addIf(r+tr,c+tc); } break;
-    case 'C': for (let [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]) { let nr=r+dr,nc=c+dc; let jumped=false; while (inBoard(nr,nc)) { const t=boardState[nr][nc]; if (!jumped) { if (t) jumped=true; else moves.push([nr,nc]); } else { if (t) { if (t.color!==color) moves.push([nr,nc]); break; } } nr+=dr;nc+=dc; } } break;
-    case 'P': if (color==='red') { addIf(r-1,c); if (r<=4) { addIf(r,c-1);addIf(r,c+1); } } else { addIf(r+1,c); if (r>=5) { addIf(r,c-1);addIf(r,c+1); } } break;
+  // 校验：基本走法合法性
+  const validMoves = Validator.getValidMoves(fromR, fromC, board);
+  const isValid = validMoves.some(([tr, tc]) => tr === toR && tc === toC);
+  if (!isValid) return false;
+
+  // 校验：不送将
+  if (!Validator.isMoveLegal(board, fromR, fromC, toR, toC, currentPlayer)) return false;
+
+  const captured = board[toR][toC];
+  const newBoard = board.map(row => [...row]);
+  newBoard[toR][toC] = piece;
+  newBoard[fromR][fromC] = null;
+
+  const moveRecord = { fromR, fromC, toR, toC, piece: { ...piece }, captured };
+  moveRecord.notation = getMoveNotation(moveRecord, piece);
+
+  moveStack.push(moveRecord);
+  redoStack = [];
+  board = newBoard;
+  selectedR = -1; hintsVisible = false;
+
+  // 棋谱树追踪
+  const move = { fromR, fromC, toR, toC };
+  const child = bookWalker.advance(move);
+  if (child) {
+    currentOpeningName = bookWalker.getCurrentName();
+    // 完成提示
+    if (!bookWalker.hasNext() && child.node.name) {
+      setTimeout(() => alert(`🎉 已完成「${child.node.name}」全部着法！\n\n可继续自由走棋练习。`), 150);
+    }
+  } else {
+    currentOpeningName = '已脱谱 · 自由走棋';
   }
-  return moves;
-}
 
-function kingsExposed(boardState) {
-  let redK=null,blackK=null;
-  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) { const p=boardState[r][c]; if (p&&p.type==='K') { if (p.color==='red') redK=[r,c]; else blackK=[r,c]; } }
-  if (!redK||!blackK||redK[1]!==blackK[1]) return false;
-  for (let r=Math.min(redK[0],blackK[0])+1; r<Math.max(redK[0],blackK[0]); r++) if (boardState[r][redK[1]]) return false;
+  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+  updateUI();
+
+  // 将杀检测
+  if (Validator.isCheckmate(board, currentPlayer)) {
+    const winner = currentPlayer === 'red' ? '黑方' : '红方';
+    setTimeout(() => alert(`🏆 将杀！${winner}胜！`), 200);
+  } else if (Validator.isInCheck(board, currentPlayer)) {
+    setTimeout(() => document.getElementById('status-bar').textContent = '⚠️ 将军！', 50);
+  }
+
   return true;
 }
 
-function isInCheck(boardState, color) {
-  let kingPos=null;
-  for (let r=0;r<ROWS&&!kingPos;r++) for (let c=0;c<COLS;c++) { const p=boardState[r][c]; if (p&&p.type==='K'&&p.color===color) { kingPos=[r,c]; break; } }
-  if (!kingPos) return true;
-  const enemy=color==='red'?'black':'red';
-  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) { const p=boardState[r][c]; if (p&&p.color===enemy) for (let [mr,mc] of getValidMoves(r,c,boardState)) if (mr===kingPos[0]&&mc===kingPos[1]) return true; }
-  return false;
+function undoMove() {
+  if (moveStack.length === 0) return;
+  const last = moveStack.pop();
+  redoStack.push(last);
+  board[last.fromR][last.fromC] = last.piece;
+  board[last.toR][last.toC] = last.captured;
+  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+  selectedR = -1; hintsVisible = false;
+  // 重建棋谱路径
+  bookWalker = new BookWalker(ROOT);
+  let ok = true;
+  for (const m of moveStack) {
+    if (!bookWalker.advance({ fromR: m.fromR, fromC: m.fromC, toR: m.toR, toC: m.toC })) {
+      ok = false; break;
+    }
+  }
+  currentOpeningName = ok ? bookWalker.getCurrentName() : '已脱谱 · 自由走棋';
+  updateUI();
 }
 
-function makeMoveOnBoard(boardState, fromR, fromC, toR, toC) {
-  const piece=boardState[fromR][fromC], captured=boardState[toR][toC];
-  const newBoard=boardState.map(row=>[...row]);
-  newBoard[toR][toC]=piece; newBoard[fromR][fromC]=null;
-  return {board:newBoard, captured};
+function redoMove() {
+  if (redoStack.length === 0) return;
+  const next = redoStack.pop();
+  const piece = board[next.fromR][next.fromC];
+  if (!piece) { redoStack.push(next); return; }
+  if (!Validator.isMoveLegal(board, next.fromR, next.fromC, next.toR, next.toC, currentPlayer)) {
+    redoStack.push(next); return;
+  }
+  board[next.toR][next.toC] = piece;
+  board[next.fromR][next.fromC] = null;
+  moveStack.push(next);
+  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
+  selectedR = -1; hintsVisible = false;
+
+  bookWalker = new BookWalker(ROOT);
+  let ok = true;
+  for (const m of moveStack) {
+    if (!bookWalker.advance({ fromR: m.fromR, fromC: m.fromC, toR: m.toR, toC: m.toC })) {
+      ok = false; break;
+    }
+  }
+  currentOpeningName = ok ? bookWalker.getCurrentName() : '已脱谱 · 自由走棋';
+  updateUI();
 }
 
-// ============ UI Rendering ============
+// ====================================================================
+// 10. 变着与脱谱交互
+// ====================================================================
+function tryExecuteOrWarn(fromR, fromC, toR, toC) {
+  // 检查是否在谱中且是否为谱着
+  const move = { fromR, fromC, toR, toC };
+  const inBook = bookWalker.current.findChild(move);
+  if (inBook) {
+    executeMove(fromR, fromC, toR, toC);
+    return;
+  }
+  // 不在谱中 — 检测是否有当前应当走的谱着
+  if (bookWalker.current.children.length > 0) {
+    const hint = bookWalker.getBookHint();
+    if (hint) {
+      const hintPiece = board[hint.move.fromR][hint.move.fromC];
+      const hintNotation = hintPiece ? getMoveNotation(hint.move, hintPiece) : '';
+      pendingDialog = { fromR, fromC, toR, toC, hintMove: hint.move, hintNotation };
+      showOffBookDialog(hintNotation);
+      return;
+    }
+  }
+  // 完全脱谱或无提示，直接走
+  executeMove(fromR, fromC, toR, toC);
+}
+
+function showOffBookDialog(hintNotation) {
+  const overlay = document.getElementById('dialog-overlay');
+  document.getElementById('dialog-book-move').textContent = `建议着法：${hintNotation}`;
+  overlay.classList.add('visible');
+}
+
+function dismissDialog() {
+  document.getElementById('dialog-overlay').classList.remove('visible');
+  pendingDialog = null;
+}
+
+function acceptHintMove() {
+  if (!pendingDialog) return;
+  const m = pendingDialog.hintMove;
+  dismissDialog();
+  executeMove(m.fromR, m.fromC, m.toR, m.toC);
+}
+
+function ignoreHintMove() {
+  if (!pendingDialog) return;
+  const m = pendingDialog;
+  dismissDialog();
+  executeMove(m.fromR, m.fromC, m.toR, m.toC);
+}
+
+document.getElementById('dialog-accept').addEventListener('click', acceptHintMove);
+document.getElementById('dialog-ignore').addEventListener('click', ignoreHintMove);
+document.getElementById('dialog-cancel').addEventListener('click', dismissDialog);
+
+// ====================================================================
+// 11. UI 渲染
+// ====================================================================
 const canvas = document.getElementById('board-canvas');
 const ctx = canvas.getContext('2d');
 const piecesContainer = document.getElementById('pieces-container');
 
 function getBoardPixelSize() {
-  const w = L.px * 2 + (COLS - 1) * L.cw;
-  const h = rowY(9) + L.py;
-  return { w, h };
+  return { w: L.px * 2 + (COLS - 1) * L.cw, h: rowY(9) + L.py };
 }
 
 function drawBoard() {
@@ -521,18 +1122,35 @@ function drawBoard() {
   const labelFont = Math.max(9, Math.min(12, 12 * L.s));
   ctx.font = `${labelFont}px sans-serif`;
   ctx.fillStyle = '#5c2e00';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  const redLabels = ['九','八','七','六','五','四','三','二','一'];
-  for (let c = 0; c < 9; c++) ctx.fillText(redLabels[c], L.px + c * L.cw, bot + 4);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let c = 0; c < 9; c++) ctx.fillText(RED_LABELS[c], L.px + c * L.cw, bot + 4);
   ctx.textBaseline = 'bottom';
-  const blackLabels = ['１','２','３','４','５','６','７','８','９'];
-  for (let c = 0; c < 9; c++) ctx.fillText(blackLabels[c], L.px + c * L.cw, top - 4);
+  for (let c = 0; c < 9; c++) ctx.fillText(BLACK_LABELS[c], L.px + c * L.cw, top - 4);
 }
 
 function renderPieces() {
   piecesContainer.innerHTML = '';
   const frag = document.createDocumentFragment();
+
+  // 教学模式下：高亮上一步棋的起落点
+  if (teachingMode && moveStack.length > 0) {
+    const lastMove = moveStack[moveStack.length - 1];
+    const fromX = L.px + lastMove.fromC * L.cw;
+    const fromY = rowY(lastMove.fromR);
+    const toX = L.px + lastMove.toC * L.cw;
+    const toY = rowY(lastMove.toR);
+
+    const fromHL = document.createElement('div');
+    fromHL.className = 'square-highlight from';
+    fromHL.style.left = fromX + 'px'; fromHL.style.top = fromY + 'px';
+    frag.appendChild(fromHL);
+
+    const toHL = document.createElement('div');
+    toHL.className = 'square-highlight to';
+    toHL.style.left = toX + 'px'; toHL.style.top = toY + 'px';
+    frag.appendChild(toHL);
+  }
+
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const piece = board[r][c];
@@ -542,10 +1160,8 @@ function renderPieces() {
       el.className = `piece ${piece.color}`;
       if (selectedR === r && selectedC === c) el.classList.add('selected');
       el.textContent = piece.char;
-      el.style.left = x + 'px';
-      el.style.top = y + 'px';
-      el.style.width = L.ps + 'px';
-      el.style.height = L.ps + 'px';
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+      el.style.width = L.ps + 'px'; el.style.height = L.ps + 'px';
       el.style.fontSize = L.fs + 'px';
       el.dataset.r = r; el.dataset.c = c;
       el.addEventListener('click', e => { e.stopPropagation(); onPieceClick(r, c); });
@@ -558,132 +1174,138 @@ function renderPieces() {
 
 function renderHints() {
   document.querySelectorAll('.hint-dot').forEach(el => el.remove());
-  const bookMoves = getBookMoves();
-  if (!hintsVisible && selectedR >= 0) {
-    const moves = getValidMoves(selectedR, selectedC, board);
+  const bookMoves = getBookMoveSet();
+  const frag = document.createDocumentFragment();
+
+  // 1) 有选中棋子 → 只显示该棋子的谱着
+  if (selectedR >= 0) {
     const piece = board[selectedR][selectedC];
     if (piece && piece.color === currentPlayer) {
-      for (let [tr, tc] of moves) {
+      const moves = Validator.getValidMoves(selectedR, selectedC, board);
+      for (const [tr, tc] of moves) {
         const key = `${selectedR},${selectedC}-${tr},${tc}`;
-        if (bookMoves.has(key)) addHintDot(tr, tc, true);
+        if (bookMoves.has(key)) {
+          addHintDot(tr, tc, board[tr][tc] !== null, frag);
+        }
       }
     }
+    // 如果没有谱着但有合法着，显示全部合法着
+    if (!frag.hasChildNodes() && selectedR >= 0) {
+      const piece = board[selectedR][selectedC];
+      if (piece && piece.color === currentPlayer) {
+        const moves = Validator.getValidMoves(selectedR, selectedC, board);
+        for (const [tr, tc] of moves) {
+          addHintDot(tr, tc, board[tr][tc] !== null, frag);
+        }
+      }
+    }
+    piecesContainer.appendChild(frag);
     return;
   }
-  if (!hintsVisible) return;
+
+  // 2) 无选中 → hintsVisible 模式下显示所有谱着
+  if (!hintsVisible) { piecesContainer.appendChild(frag); return; }
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const piece = board[r][c];
       if (!piece || piece.color !== currentPlayer) continue;
-      const moves = getValidMoves(r, c, board);
-      for (let [tr, tc] of moves) {
+      const moves = Validator.getValidMoves(r, c, board);
+      for (const [tr, tc] of moves) {
         const key = `${r},${c}-${tr},${tc}`;
-        if (bookMoves.has(key)) addHintDot(tr, tc, true);
+        if (bookMoves.has(key)) addHintDot(tr, tc, board[tr][tc] !== null, frag);
       }
     }
   }
+  piecesContainer.appendChild(frag);
 }
 
-function addHintDot(r, c, isBookMove) {
+function addHintDot(r, c, isCapture, frag) {
   const x = L.px + c * L.cw, y = rowY(r);
   const el = document.createElement('div');
-  const isCapture = board[r][c] !== null;
   const dotSize = Math.max(12, Math.min(20, 20 * L.s));
-  el.className = `hint-dot ${isCapture ? 'capture' : ''}`;
-  el.style.left = x + 'px';
-  el.style.top = y + 'px';
-  el.style.width = dotSize + 'px';
-  el.style.height = dotSize + 'px';
+  el.className = 'hint-dot';
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+  el.style.width = dotSize + 'px'; el.style.height = dotSize + 'px';
   el.style.background = isCapture ? 'rgba(220,50,50,0.45)' : 'rgba(0,200,80,0.55)';
   el.style.border = `2px solid ${isCapture ? 'rgba(200,40,40,0.7)' : 'rgba(0,180,60,0.8)'}`;
   const handler = (e) => {
     e.stopPropagation();
     if (selectedR >= 0) {
-      const piece = board[selectedR][selectedC];
-      if (piece && piece.color === currentPlayer) {
-        const key = `${selectedR},${selectedC}-${r},${c}`;
-        if (getBookMoves().has(key)) { executeMove(selectedR, selectedC, r, c); return; }
+      const p = board[selectedR][selectedC];
+      if (p && p.color === currentPlayer) {
+        tryExecuteOrWarn(selectedR, selectedC, r, c);
+        return;
       }
     }
-    const bookMoves = getBookMoves();
+    // Fallback: 找哪个己方棋子可以走到这里
     for (let pr = 0; pr < ROWS; pr++) {
       for (let pc = 0; pc < COLS; pc++) {
-        const piece = board[pr][pc];
-        if (piece && piece.color === currentPlayer) {
-          const key = `${pr},${pc}-${r},${c}`;
-          if (bookMoves.has(key)) { executeMove(pr, pc, r, c); return; }
+        const p = board[pr][pc];
+        if (p && p.color === currentPlayer) {
+          if (Validator.getValidMoves(pr, pc, board).some(([tr, tc]) => tr === r && tc === c)) {
+            tryExecuteOrWarn(pr, pc, r, c);
+            return;
+          }
         }
       }
     }
   };
   el.addEventListener('click', handler);
   el.addEventListener('touchstart', e => { e.preventDefault(); handler(e); }, {passive: false});
-  piecesContainer.appendChild(el);
+  frag.appendChild(el);
 }
 
-// ============ Opening Book Queries ============
-function getBookMoves() {
-  const result = new Map();
-  if (!bookNode) return result;
-  for (let [key, child] of Object.entries(bookNode.children)) result.set(key, child.name || '续着');
-  return result;
+function getBookMoveSet() {
+  const set = new Set();
+  for (const child of bookWalker.current.children) {
+    set.add(`${child.move.fromR},${child.move.fromC}-${child.move.toR},${child.move.toC}`);
+  }
+  return set;
 }
 
-// ============ Move Execution ============
-function executeMove(fromR, fromC, toR, toC) {
-  const { board: newBoard, captured } = makeMoveOnBoard(board, fromR, fromC, toR, toC);
-  if (kingsExposed(newBoard)) return false;
-  if (isInCheck(newBoard, currentPlayer)) return false;
-  const piece = board[fromR][fromC];
-  moveStack.push({ fromR, fromC, toR, toC, piece: {...piece}, captured });
-  redoStack = [];
-  board = newBoard;
-  selectedR = -1; hintsVisible = false;
-  const key = `${fromR},${fromC}-${toR},${toC}`;
-  if (bookNode && bookNode.children[key]) {
-    bookNode = bookNode.children[key];
-    if (bookNode.name) currentOpeningName = bookNode.name;
-    if (Object.keys(bookNode.children).length === 0 && bookNode.name) {
-      setTimeout(() => alert(`🎉 恭喜完成「${bookNode.name}」全部着法！\n\n可继续自由走棋练习。`), 100);
+// ====================================================================
+// 12. 教学面板
+// ====================================================================
+function updateTeachingPanel() {
+  const panel = document.getElementById('teaching-panel');
+  const descEl = document.getElementById('move-desc');
+  const annotEl = document.getElementById('annotation-text');
+
+  if (!teachingMode) {
+    panel.classList.remove('visible');
+    return;
+  }
+  panel.classList.add('visible');
+
+  // 当前步的描述
+  if (bookWalker.current.moveDesc) {
+    descEl.textContent = bookWalker.current.moveDesc;
+  } else if (moveStack.length > 0) {
+    const lastMove = moveStack[moveStack.length - 1];
+    const side = lastMove.piece.color === 'red' ? '红方' : '黑方';
+    descEl.textContent = `${side} ${lastMove.notation}`;
+  } else {
+    descEl.textContent = '开局准备 · 红方先走';
+  }
+
+  // 注解
+  const comment = bookWalker.current.comment;
+  if (comment) {
+    annotEl.textContent = '📌 ' + comment;
+  } else {
+    // 尝试从最近的有注解的祖先取
+    let found = '';
+    for (let i = bookWalker.path.length - 1; i >= 0; i--) {
+      const c = bookWalker.path[i].child.node.comment;
+      if (c) { found = c; break; }
     }
-  } else { bookNode = null; }
-  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
-  updateUI();
-  return true;
-}
-
-function undoMove() {
-  if (moveStack.length === 0) return;
-  const last = moveStack.pop(); redoStack.push(last);
-  board[last.fromR][last.fromC] = last.piece; board[last.toR][last.toC] = last.captured;
-  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
-  selectedR = -1; hintsVisible = false;
-  rebuildBookNode(); updateUI();
-}
-
-function redoMove() {
-  if (redoStack.length === 0) return;
-  const next = redoStack.pop();
-  const { board: newBoard } = makeMoveOnBoard(board, next.fromR, next.fromC, next.toR, next.toC);
-  if (kingsExposed(newBoard)) { redoStack.push(next); return; }
-  board = newBoard; moveStack.push(next);
-  currentPlayer = currentPlayer === 'red' ? 'black' : 'red';
-  selectedR = -1; hintsVisible = false;
-  rebuildBookNode(); updateUI();
-}
-
-function rebuildBookNode() {
-  bookNode = BOOK_ROOT; currentOpeningName = '当头炮';
-  for (let m of moveStack) {
-    const key = `${m.fromR},${m.fromC}-${m.toR},${m.toC}`;
-    if (bookNode && bookNode.children[key]) {
-      bookNode = bookNode.children[key];
-      if (bookNode.name) currentOpeningName = bookNode.name;
-    } else { bookNode = null; break; }
+    annotEl.textContent = found ? '📌 ' + found : '';
   }
 }
 
-// ============ UI Update ============
+// ====================================================================
+// 13. UI 更新聚合
+// ====================================================================
 function updateUI() {
   renderPieces();
   renderHints();
@@ -691,20 +1313,18 @@ function updateUI() {
   updateControls();
   updateOpeningName();
   updateStatus();
+  updateVariations();
+  updateTeachingPanel();
 }
 
-function getMoveNotation(move) {
-  const char = move.piece.char;
-  const fromC = move.fromC, toC = move.toC, fromR = move.fromR, toR = move.toR;
-  const isHorizontal = fromR === toR;
-  const dir = isHorizontal ? '平' : (move.piece.color === 'red' ? (toR < fromR ? '进' : '退') : (toR > fromR ? '进' : '退'));
-  const colNum = move.piece.color === 'red' ? (9 - fromC) : (fromC + 1);
-  let num2;
-  if (isHorizontal) { num2 = move.piece.color === 'red' ? (9 - toC) : (toC + 1); }
-  else { const isHorse = move.piece.type === 'H'; num2 = isHorse ? (move.piece.color === 'red' ? (9 - toC) : (toC + 1)) : Math.abs(toR - fromR); }
-  const nums = ['０','一','二','三','四','五','六','七','八','九'];
-  const tn = n => n >= 0 && n <= 9 ? nums[n] : String(n);
-  return `${char}${tn(colNum)}${dir}${tn(num2)}${move.captured ? '！' : ''}`;
+function toggleTeachingMode() {
+  teachingMode = !teachingMode;
+  document.getElementById('teach-btn').classList.toggle('active', teachingMode);
+  updateUI();
+  if (teachingMode && bookWalker.current.hasMultipleBranches()) {
+    // 自动提示分支
+    updateVariations();
+  }
 }
 
 function updateMoveHistory() {
@@ -713,12 +1333,14 @@ function updateMoveHistory() {
   for (let i = 0; i < moveStack.length; i += 2) {
     const num = Math.floor(i / 2) + 1;
     const li = document.createElement('li');
-    li.innerHTML = `<span class="num">${num}.</span> ${getMoveNotation(moveStack[i])}`;
-    if (i === moveStack.length - 1 || (i + 1 === moveStack.length - 1 && moveStack.length % 2 === 0)) li.classList.add('active');
+    li.innerHTML = `<span class="num">${num}.</span> ${moveStack[i].notation}`;
+    if (i === moveStack.length - 1 || (i + 1 === moveStack.length - 1 && moveStack.length % 2 === 0)) {
+      li.classList.add('active');
+    }
     list.appendChild(li);
     if (i + 1 < moveStack.length) {
       const li2 = document.createElement('li');
-      li2.innerHTML = `${getMoveNotation(moveStack[i+1])}`;
+      li2.innerHTML = `${moveStack[i+1].notation}`;
       if (i + 1 === moveStack.length - 1) li2.classList.add('active');
       list.appendChild(li2);
     }
@@ -732,51 +1354,81 @@ function updateControls() {
 
 function updateOpeningName() {
   const el = document.getElementById('opening-name');
-  if (bookNode) {
-    const depth = moveStack.length;
-    if (depth % 2 === 0) el.textContent = `${currentOpeningName} · 红方走棋`;
-    else el.textContent = `${currentOpeningName} · 黑方走棋`;
-  } else {
-    el.textContent = '已脱谱 · 自由走棋';
-  }
+  el.textContent = currentOpeningName;
 }
 
 function updateStatus() {
   const el = document.getElementById('status-bar');
   if (selectedR >= 0) {
     const piece = board[selectedR][selectedC];
-    if (piece && piece.color === currentPlayer) el.textContent = `选中 ${piece.char}，点击绿色提示位置走棋`;
-    else el.textContent = `当前 ${currentPlayer === 'red' ? '红' : '黑'}方走棋，请点击己方棋子`;
+    if (piece && piece.color === currentPlayer) {
+      el.textContent = `选中 ${piece.char}，点击绿色提示位置走棋`;
+    } else {
+      el.textContent = `当前 ${currentPlayer === 'red' ? '红' : '黑'}方走棋，请点击己方棋子`;
+    }
   } else {
     el.textContent = `当前 ${currentPlayer === 'red' ? '红' : '黑'}方走棋，点击棋子选中`;
   }
 }
 
-// ============ Piece Click Handler ============
+function updateVariations() {
+  const container = document.getElementById('variation-list');
+  container.innerHTML = '';
+  const vars = bookWalker.getVariations();
+  if (vars.length === 0) {
+    container.innerHTML = '<span style="color:#7a5a3a;font-size:13px;">无可选变着</span>';
+    return;
+  }
+  // 如果只有一个子节点，显示主变名称
+  if (vars.length === 1 && vars[0].name) {
+    const span = document.createElement('span');
+    span.style.cssText = 'color:#7a5a3a;font-size:13px;';
+    span.textContent = vars[0].name;
+    container.appendChild(span);
+    return;
+  }
+  for (const v of vars) {
+    const btn = document.createElement('button');
+    btn.className = 'var-btn';
+    const piece = board[v.move.fromR][v.move.fromC];
+    const notation = piece ? getMoveNotation(v.move, piece) : '';
+    btn.innerHTML = `${notation}${v.comment ? ' <span class="tag">💡</span>' : ''}`;
+    btn.title = v.name || v.comment || '';
+    btn.addEventListener('click', () => {
+      // 直接执行此变着
+      executeMove(v.move.fromR, v.move.fromC, v.move.toR, v.move.toC);
+    });
+    container.appendChild(btn);
+  }
+}
+
+// ====================================================================
+// 14. 点击处理器
+// ====================================================================
 function onPieceClick(r, c) {
   const piece = board[r][c];
-  if (!piece) { selectedR = -1; hintsVisible = false; updateUI(); return; }
+  if (!piece) {
+    selectedR = -1; hintsVisible = false; updateUI();
+    return;
+  }
   if (piece.color === currentPlayer) {
     selectedR = r; selectedC = c; hintsVisible = false;
     updateUI();
   } else if (selectedR >= 0) {
-    const key = `${selectedR},${selectedC}-${r},${c}`;
-    if (getBookMoves().has(key)) {
-      executeMove(selectedR, selectedC, r, c);
-    } else {
-      selectedR = -1; hintsVisible = false; updateUI();
-    }
+    // 尝试吃子走法
+    tryExecuteOrWarn(selectedR, selectedC, r, c);
   }
 }
 
-// ============ Full Re-render on Resize ============
+// ====================================================================
+// 15. 全量渲染 & 事件绑定
+// ====================================================================
 function fullRender() {
   calcLayout();
   drawBoard();
   updateUI();
 }
 
-// ============ Resize Handler ============
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
@@ -786,23 +1438,32 @@ window.addEventListener('orientationchange', () => {
   setTimeout(fullRender, 300);
 });
 
-// ============ Keyboard Shortcuts ============
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undoMove(); }
   else if (e.ctrlKey && e.key === 'z' && e.shiftKey) { e.preventDefault(); redoMove(); }
   else if (e.key === 'h' || e.key === 'H') { e.preventDefault(); hintsVisible = !hintsVisible; updateUI(); }
   else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); initBoard(); fullRender(); }
+  else if (e.key === 't' || e.key === 'T') { e.preventDefault(); toggleTeachingMode(); }
 });
 
-// ============ Init ============
-initBoard();
-fullRender();
-
-// Button handlers
 document.getElementById('undo-btn').addEventListener('click', undoMove);
 document.getElementById('redo-btn').addEventListener('click', redoMove);
 document.getElementById('hint-btn').addEventListener('click', () => { hintsVisible = !hintsVisible; updateUI(); });
+document.getElementById('teach-btn').addEventListener('click', toggleTeachingMode);
 document.getElementById('reset-btn').addEventListener('click', () => { initBoard(); fullRender(); });
+
+// 点击空白取消选中
+document.addEventListener('click', () => {
+  if (selectedR >= 0 || hintsVisible) { selectedR = -1; hintsVisible = false; updateUI(); }
+});
+// 空白取消不干扰棋盘点击
+document.getElementById('board-wrapper').addEventListener('click', e => e.stopPropagation());
+
+// ====================================================================
+// 16. 启动
+// ====================================================================
+initBoard();
+fullRender();
 </script>
 </body>
 </html>
